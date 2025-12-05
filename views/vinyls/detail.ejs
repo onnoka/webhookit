@@ -53,6 +53,31 @@
                 </div>
             </div>
         </div>
+
+        <% if (vinyl.tracks && vinyl.tracks.length > 0) { %>
+        <div class="tracklist-section">
+            <h2>🎵 Track Listing</h2>
+            <div class="tracklist">
+                <% vinyl.tracks.forEach((track, index) => { %>
+                    <div class="track-item">
+                        <div class="track-info">
+                            <span class="track-position"><%= track.position || (index + 1) %></span>
+                            <span class="track-title"><%= track.title %></span>
+                            <% if (track.duration) { %>
+                                <span class="track-duration"><%= track.duration %></span>
+                            <% } %>
+                        </div>
+                        <a href="https://open.spotify.com/search/<%= encodeURIComponent(vinyl.artist + ' ' + track.title) %>"
+                           target="_blank"
+                           class="spotify-link"
+                           title="Search on Spotify">
+                            🎧 Spotify
+                        </a>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+        <% } %>
     </div>
 
     <script>

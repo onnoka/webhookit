@@ -39,17 +39,73 @@ function searchDiscogs(barcode) {
           const result = JSON.parse(data);
           if (result.results && result.results.length > 0) {
             const release = result.results[0];
-            resolve({
-              title: release.title || 'Unknown',
-              artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
-              year: release.year || 'Unknown',
-              label: release.label ? release.label[0] : 'Unknown',
-              coverUrl: release.cover_image || release.thumb || '/placeholder.jpg',
-              barcode: barcode
-            });
+
+            // Get full release details including tracks
+            if (release.id) {
+              getReleaseDetails(release.id).then(details => {
+                resolve({
+                  title: release.title || 'Unknown',
+                  artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
+                  year: release.year || 'Unknown',
+                  label: release.label ? release.label[0] : 'Unknown',
+                  coverUrl: release.cover_image || release.thumb || '/placeholder.jpg',
+                  barcode: barcode,
+                  tracks: details.tracklist || []
+                });
+              }).catch(() => {
+                // Fallback without tracks
+                resolve({
+                  title: release.title || 'Unknown',
+                  artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
+                  year: release.year || 'Unknown',
+                  label: release.label ? release.label[0] : 'Unknown',
+                  coverUrl: release.cover_image || release.thumb || '/placeholder.jpg',
+                  barcode: barcode,
+                  tracks: []
+                });
+              });
+            } else {
+              resolve({
+                title: release.title || 'Unknown',
+                artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
+                year: release.year || 'Unknown',
+                label: release.label ? release.label[0] : 'Unknown',
+                coverUrl: release.cover_image || release.thumb || '/placeholder.jpg',
+                barcode: barcode,
+                tracks: []
+              });
+            }
           } else {
             resolve(null);
           }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Get full release details from Discogs
+function getReleaseDetails(releaseId) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.discogs.com',
+      path: `/releases/${releaseId}`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'VinylBarcodeScanner/2.0',
+        'Authorization': `Discogs token=${DISCOGS_TOKEN}`
+      }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const release = JSON.parse(data);
+          resolve(release);
         } catch (error) {
           reject(error);
         }
