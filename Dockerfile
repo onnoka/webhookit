@@ -2,7 +2,7 @@
 # Compatible with Synology NAS and other Docker environments
 # Uses pre-installed node_modules from the repo
 
-FROM node:16-alpine
+FROM node:14-alpine
 
 # Set working directory
 WORKDIR /app
