@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:5.0
+    container_name: vinyl-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: webhookit
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - vinyl-network
+    ports:
+      - "27017:27017"
+
+  # Vinyl Collection App
+  vinyl-app:
+    build: .
+    container_name: vinyl-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_DB: webhookit
+      PORT: 8124
+      HOST: 0.0.0.0
+      SESSION_SECRET: change-this-to-a-random-secret
+      PUBLIC_USER_CREATION: "true"
+    ports:
+      - "8124:8124"
+    depends_on:
+      - mongodb
+    networks:
+      - vinyl-network
+
+volumes:
+  mongodb-data:
+    driver: local
+
+networks:
+  vinyl-network:
+    driver: bridge
