@@ -33,6 +33,9 @@
 		"webhookit-xml2js": ">=0.0.1",
 		"webhookit-jsonparse": ">=0.0.1"
     },
+    "overrides": {
+        "mime": "2.6.0"
+    },
     "licenses":[  {"type" : "MIT"} ],
     "repository": {
         "type":"git",
