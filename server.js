@@ -211,6 +211,51 @@ function searchSpotifyTrack(artist, trackName) {
   });
 }
 
+// Spotify API - Search for album
+function searchSpotifyAlbum(artist, albumTitle) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const token = await getSpotifyAccessToken();
+      const query = encodeURIComponent(`album:${albumTitle} artist:${artist}`);
+
+      const options = {
+        hostname: 'api.spotify.com',
+        path: `/v1/search?q=${query}&type=album&limit=1`,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      https.get(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            if (result.albums && result.albums.items && result.albums.items.length > 0) {
+              const album = result.albums.items[0];
+              resolve({
+                spotifyUrl: album.external_urls.spotify,
+                name: album.name,
+                artist: album.artists[0].name,
+                releaseDate: album.release_date,
+                totalTracks: album.total_tracks
+              });
+            } else {
+              resolve(null);
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }).on('error', reject);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 // Routes
 app.get('/', (req, res) => {
   res.redirect('/vinyls');
@@ -315,6 +360,25 @@ app.get('/api/spotify/preview', async (req, res) => {
       res.json({ success: true, previewUrl: result.previewUrl, spotifyUrl: result.spotifyUrl });
     } else {
       res.json({ success: false, message: 'No preview available' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get Spotify album URL
+app.get('/api/spotify/album', async (req, res) => {
+  try {
+    const { artist, album } = req.query;
+    if (!artist || !album) {
+      return res.status(400).json({ success: false, message: 'Artist and album required' });
+    }
+
+    const result = await searchSpotifyAlbum(artist, album);
+    if (result && result.spotifyUrl) {
+      res.json({ success: true, spotifyUrl: result.spotifyUrl });
+    } else {
+      res.json({ success: false, message: 'Album not found on Spotify' });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

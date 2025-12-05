@@ -11,6 +11,9 @@
         <header>
             <a href="/vinyls" class="btn btn-back">← Back to Collection</a>
             <div class="header-actions">
+                <button onclick="playAlbumOnSpotify('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= vinyl.title.replace(/'/g, "\\'") %>')" class="btn btn-spotify">
+                    🎵 Play Album on Spotify
+                </button>
                 <button onclick="refreshTracks('<%= vinyl.id %>')" class="btn btn-secondary">🔄 Refresh Tracks</button>
                 <button onclick="deleteVinyl('<%= vinyl.id %>')" class="btn btn-danger">🗑️ Delete</button>
             </div>
@@ -87,6 +90,21 @@
 
     <script>
         let currentlyPlayingIndex = null;
+
+        async function playAlbumOnSpotify(artist, album) {
+            try {
+                const response = await fetch(`/api/spotify/album?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`);
+                const data = await response.json();
+
+                if (data.success && data.spotifyUrl) {
+                    window.open(data.spotifyUrl, '_blank');
+                } else {
+                    alert('⚠️ Album niet gevonden op Spotify');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
 
         async function deleteVinyl(id) {
             if (!confirm('Are you sure you want to delete this vinyl?')) return;

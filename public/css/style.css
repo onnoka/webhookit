@@ -416,6 +416,18 @@ h1 {
     background: #c82333;
 }
 
+.btn-spotify {
+    background: #1DB954;
+    color: white;
+    font-weight: 700;
+}
+
+.btn-spotify:hover {
+    background: #1ed760;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(29, 185, 84, 0.3);
+}
+
 /* Tracklist */
 .tracklist-section {
     margin-top: 40px;
