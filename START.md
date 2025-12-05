@@ -1,33 +1,33 @@
 # 🎵 Vinyl Barcode Scanner - Quick Start
 
-## ✅ Prerequisites (Already Done!)
-- ✅ MongoDB container running on port 27017
+## ✨ NO DATABASE NEEDED!
+This app uses a simple JSON file - no MongoDB, no Docker, no hassle!
+
+## ✅ Prerequisites
 - ✅ Node.js 18 installed on your NAS
 
-## 🚀 Start the App (3 Simple Steps!)
+## 🚀 Start the App (3 Commands!)
 
-### Step 1: Pull Latest Code
 ```bash
 cd /volume1/docker/vinyl-app
+
 git pull origin claude/vinyl-barcode-scanner-014cKgW3P9dHjVDCpGyaysVJ
-```
 
-### Step 2: Install Dependencies
-```bash
 npm install
-```
 
-### Step 3: Start the App
-```bash
 node server.js
 ```
 
 You should see:
 ```
-Connecting to MongoDB...
-✅ Connected to MongoDB successfully!
-🎵 Vinyl Barcode Scanner running on http://0.0.0.0:8124
-📱 Open on your phone: http://YOUR-NAS-IP:8124
+🎵 Starting Vinyl Barcode Scanner...
+📦 Using JSON file database (no MongoDB needed!)
+
+✅ Server is running!
+🎵 Vinyl Barcode Scanner: http://0.0.0.0:8124
+📱 Open on your phone: http://192.168.2.102:8124
+
+💾 Data saved to: data/vinyls.json
 ```
 
 ## 📱 Open the App
@@ -36,7 +36,6 @@ On your phone or computer, go to:
 ```
 http://192.168.2.102:8124
 ```
-(Replace with your NAS IP if different)
 
 ## 🎯 How to Use
 
@@ -56,15 +55,11 @@ Press `Ctrl+C` in the terminal
 ## 💡 Tips
 
 - Works best on mobile (iPhone/Android) for scanning
-- Make sure MongoDB container is running: `sudo docker ps | grep mongo`
+- Your collection is saved in `data/vinyls.json`
 - App runs on port 8124 by default
+- No database needed - everything just works!
 
 ## 🐛 Troubleshooting
-
-**"Can't connect to MongoDB"**
-```bash
-sudo docker start vinyl-mongodb
-```
 
 **"npm install fails"**
 ```bash
@@ -75,6 +70,10 @@ npm install
 **"Camera doesn't work"**
 - Use HTTPS or allow camera on HTTP (browser settings)
 - Or use manual barcode input
+
+**"Where is my data?"**
+- All vinyls are stored in `data/vinyls.json`
+- You can backup this file to keep your collection safe!
 
 ---
 
