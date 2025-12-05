@@ -1,18 +1,13 @@
 # Dockerfile for Vinyl Collection App
 # Compatible with Synology NAS and other Docker environments
+# Uses pre-installed node_modules from the repo
 
 FROM node:16-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --legacy-peer-deps --production
-
-# Copy application code
+# Copy ALL application code including node_modules
 COPY . .
 
 # Expose port
