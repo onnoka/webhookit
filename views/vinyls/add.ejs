@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Barcode - Vinyl Collection</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📷 Scan Vinyl Barcode</h1>
+            <a href="/vinyls" class="btn-back">← Back to Collection</a>
+        </header>
+
+        <div class="scanner-section">
+            <div id="scanner-container">
+                <video id="video" autoplay playsinline></video>
+                <div id="scanner-overlay">
+                    <div class="scanner-line"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="start-camera" class="btn btn-primary">Start Camera</button>
+                <button id="stop-camera" class="btn btn-secondary" style="display:none;">Stop Camera</button>
+            </div>
+
+            <div class="manual-input">
+                <p>Or enter barcode manually:</p>
+                <div class="input-group">
+                    <input type="text" id="manual-barcode" placeholder="Enter barcode number">
+                    <button id="manual-search" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="result" style="display:none;">
+            <div class="album-card">
+                <img id="album-cover" src="" alt="Album cover">
+                <div class="album-info">
+                    <h2 id="album-title"></h2>
+                    <p><strong>Artist:</strong> <span id="album-artist"></span></p>
+                    <p><strong>Year:</strong> <span id="album-year"></span></p>
+                    <p><strong>Label:</strong> <span id="album-label"></span></p>
+                    <p><strong>Barcode:</strong> <span id="album-barcode"></span></p>
+                </div>
+                <div class="album-actions">
+                    <button id="add-to-collection" class="btn btn-success">✓ Add to Collection</button>
+                    <button id="scan-another" class="btn btn-secondary">Scan Another</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" style="display:none;">
+            <div class="loader"></div>
+            <p>Searching Discogs...</p>
+        </div>
+    </div>
+
+    <script src="/js/scanner.js"></script>
+</body>
+</html>

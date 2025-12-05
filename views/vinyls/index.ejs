@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Vinyl Collection</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 My Vinyl Collection</h1>
+            <a href="/vinyls/add" class="btn btn-primary">+ Add Vinyl</a>
+        </header>
+
+        <% if (vinyls.length === 0) { %>
+            <div class="empty-state">
+                <h2>No vinyls yet!</h2>
+                <p>Start building your collection by scanning a barcode.</p>
+                <a href="/vinyls/add" class="btn btn-primary">Scan First Vinyl</a>
+            </div>
+        <% } else { %>
+            <div class="vinyl-grid">
+                <% vinyls.forEach(vinyl => { %>
+                    <div class="vinyl-card" data-id="<%= vinyl._id %>">
+                        <img src="<%= vinyl.coverUrl %>" alt="<%= vinyl.title %>">
+                        <div class="vinyl-info">
+                            <h3><%= vinyl.title %></h3>
+                            <p class="artist"><%= vinyl.artist %></p>
+                            <p class="year"><%= vinyl.year %></p>
+                        </div>
+                        <button class="btn-delete" onclick="deleteVinyl('<%= vinyl._id %>')">🗑️</button>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        async function deleteVinyl(id) {
+            if (!confirm('Are you sure you want to delete this vinyl?')) return;
+
+            try {
+                const response = await fetch(`/api/vinyls/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Error deleting vinyl');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
