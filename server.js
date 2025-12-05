@@ -78,6 +78,20 @@ app.get('/vinyls/add', (req, res) => {
   res.render('vinyls/add');
 });
 
+// View single vinyl detail
+app.get('/vinyls/:id', (req, res) => {
+  try {
+    const vinyl = db.getVinylById(req.params.id);
+    if (vinyl) {
+      res.render('vinyls/detail', { vinyl });
+    } else {
+      res.status(404).send('Vinyl not found');
+    }
+  } catch (error) {
+    res.status(500).send('Error loading vinyl: ' + error.message);
+  }
+});
+
 // Search by barcode API
 app.get('/api/vinyls/search/:barcode', async (req, res) => {
   try {

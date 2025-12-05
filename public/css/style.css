@@ -330,3 +330,94 @@ h1 {
         height: 150px;
     }
 }
+
+/* Vinyl Card Link */
+.vinyl-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.vinyl-link:hover {
+    text-decoration: none;
+}
+
+.vinyl-card {
+    cursor: pointer;
+}
+
+/* Detail Page */
+.detail-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+.detail-cover {
+    text-align: center;
+}
+
+.detail-cover img {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.detail-info h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.info-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-section:last-child {
+    border-bottom: none;
+}
+
+.info-section h3 {
+    color: #999;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.info-section p {
+    font-size: 1.2em;
+    color: #333;
+}
+
+.info-section code {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+@media (max-width: 768px) {
+    .detail-page {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .detail-info h1 {
+        font-size: 1.8em;
+    }
+}

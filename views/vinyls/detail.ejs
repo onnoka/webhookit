@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= vinyl.title %> - Vinyl Collection</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/vinyls" class="btn btn-back">← Back to Collection</a>
+            <button onclick="deleteVinyl('<%= vinyl.id %>')" class="btn btn-danger">🗑️ Delete</button>
+        </header>
+
+        <div class="detail-page">
+            <div class="detail-cover">
+                <img src="<%= vinyl.coverUrl %>" alt="<%= vinyl.title %>">
+            </div>
+
+            <div class="detail-info">
+                <h1><%= vinyl.title %></h1>
+
+                <div class="info-section">
+                    <h3>Artist</h3>
+                    <p><%= vinyl.artist %></p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Year</h3>
+                    <p><%= vinyl.year %></p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Label</h3>
+                    <p><%= vinyl.label %></p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Barcode</h3>
+                    <p><code><%= vinyl.barcode %></code></p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Added to Collection</h3>
+                    <p><%= new Date(vinyl.createdAt).toLocaleDateString('nl-NL', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) %></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function deleteVinyl(id) {
+            if (!confirm('Are you sure you want to delete this vinyl?')) return;
+
+            try {
+                const response = await fetch(`/api/vinyls/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/vinyls';
+                } else {
+                    alert('Error deleting vinyl');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
