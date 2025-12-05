@@ -1,16 +1,14 @@
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 const bodyParser = require('body-parser');
 const https = require('https');
+const JsonDB = require('./lib/jsondb');
 
 const app = express();
 const PORT = process.env.PORT || 8124;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const DB_NAME = 'vinyl-collection';
 
-let db;
-let vinylsCollection;
+// Initialize JSON database
+const db = new JsonDB(path.join(__dirname, 'data', 'vinyls.json'));
 
 // Middleware
 app.use(bodyParser.json());
@@ -18,21 +16,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
-// MongoDB Connection
-async function connectDB() {
-  try {
-    console.log('Connecting to MongoDB...');
-    const client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    db = client.db(DB_NAME);
-    vinylsCollection = db.collection('vinyls');
-    console.log('✅ Connected to MongoDB successfully!');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
-  }
-}
 
 // Discogs API Helper
 function searchDiscogs(barcode) {
@@ -79,9 +62,9 @@ app.get('/', (req, res) => {
 });
 
 // List all vinyls
-app.get('/vinyls', async (req, res) => {
+app.get('/vinyls', (req, res) => {
   try {
-    const vinyls = await vinylsCollection.find({}).sort({ createdAt: -1 }).toArray();
+    const vinyls = db.getAllVinyls().reverse(); // newest first
     res.render('vinyls/index', { vinyls });
   } catch (error) {
     res.status(500).send('Error loading vinyls: ' + error.message);
@@ -108,23 +91,19 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
 });
 
 // Add vinyl to collection
-app.post('/api/vinyls', async (req, res) => {
+app.post('/api/vinyls', (req, res) => {
   try {
-    const vinyl = {
-      ...req.body,
-      createdAt: new Date()
-    };
-    const result = await vinylsCollection.insertOne(vinyl);
-    res.json({ success: true, id: result.insertedId });
+    const vinyl = db.addVinyl(req.body);
+    res.json({ success: true, id: vinyl.id });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // Delete vinyl
-app.delete('/api/vinyls/:id', async (req, res) => {
+app.delete('/api/vinyls/:id', (req, res) => {
   try {
-    await vinylsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+    db.deleteVinyl(req.params.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -132,9 +111,15 @@ app.delete('/api/vinyls/:id', async (req, res) => {
 });
 
 // Start server
-connectDB().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🎵 Vinyl Barcode Scanner running on http://0.0.0.0:${PORT}`);
-    console.log(`📱 Open on your phone: http://YOUR-NAS-IP:${PORT}`);
-  });
+console.log('🎵 Starting Vinyl Barcode Scanner...');
+console.log('📦 Using JSON file database (no MongoDB needed!)');
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('');
+  console.log('✅ Server is running!');
+  console.log(`🎵 Vinyl Barcode Scanner: http://0.0.0.0:${PORT}`);
+  console.log(`📱 Open on your phone: http://192.168.2.102:${PORT}`);
+  console.log('');
+  console.log('💾 Data saved to: data/vinyls.json');
+  console.log('');
 });

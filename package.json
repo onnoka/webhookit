@@ -1,20 +1,16 @@
 {
   "name": "vinyl-barcode-scanner",
-  "version": "2.0.0",
-  "description": "Modern Vinyl Collection Manager with Barcode Scanner",
+  "version": "2.1.0",
+  "description": "Modern Vinyl Collection Manager with Barcode Scanner - No Database Required!",
   "author": "Claude",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "mongodb": "^5.9.0",
     "ejs": "^3.1.9",
-    "dotenv": "^16.3.1",
-    "body-parser": "^1.20.2",
-    "express-session": "^1.17.3"
+    "body-parser": "^1.20.2"
   },
   "engines": {
     "node": ">=16.0.0"
