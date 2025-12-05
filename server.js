@@ -9,8 +9,8 @@ const PORT = process.env.PORT || 8124;
 const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN || 'pEbvHbIafRFLJcNkfZQmTBhrhacSEuKZrhFrHcIn';
 
 // Spotify API credentials (using client credentials flow)
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '4d9e3c6f8a7b4e2d9f1a3c5e7b9d1f3a';
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '8b7d9e4f6a2c1e3b5d7f9a1c3e5b7d9f';
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || 'a030c7e726654eac9f62b72856e8380a';
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '5f3e2822312a47b299ee225a2d9ececa';
 let spotifyAccessToken = null;
 let spotifyTokenExpiry = null;
 
