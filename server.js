@@ -6,6 +6,7 @@ const JsonDB = require('./lib/jsondb');
 
 const app = express();
 const PORT = process.env.PORT || 8124;
+const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN || 'pEbvHbIafRFLJcNkfZQmTBhrhacSEuKZrhFrHcIn';
 
 // Initialize JSON database
 const db = new JsonDB(path.join(__dirname, 'data', 'vinyls.json'));
@@ -25,7 +26,8 @@ function searchDiscogs(barcode) {
       path: `/database/search?barcode=${encodeURIComponent(barcode)}&type=release`,
       method: 'GET',
       headers: {
-        'User-Agent': 'VinylBarcodeScanner/2.0'
+        'User-Agent': 'VinylBarcodeScanner/2.0',
+        'Authorization': `Discogs token=${DISCOGS_TOKEN}`
       }
     };
 
