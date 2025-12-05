@@ -8,6 +8,12 @@ const app = express();
 const PORT = process.env.PORT || 8124;
 const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN || 'pEbvHbIafRFLJcNkfZQmTBhrhacSEuKZrhFrHcIn';
 
+// Spotify API credentials (using client credentials flow)
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '4d9e3c6f8a7b4e2d9f1a3c5e7b9d1f3a';
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '8b7d9e4f6a2c1e3b5d7f9a1c3e5b7d9f';
+let spotifyAccessToken = null;
+let spotifyTokenExpiry = null;
+
 // Initialize JSON database
 const db = new JsonDB(path.join(__dirname, 'data', 'vinyls.json'));
 
@@ -114,6 +120,97 @@ function getReleaseDetails(releaseId) {
   });
 }
 
+// Spotify API - Get access token
+function getSpotifyAccessToken() {
+  return new Promise((resolve, reject) => {
+    // Check if we have a valid token
+    if (spotifyAccessToken && spotifyTokenExpiry && Date.now() < spotifyTokenExpiry) {
+      return resolve(spotifyAccessToken);
+    }
+
+    const auth = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
+    const postData = 'grant_type=client_credentials';
+
+    const options = {
+      hostname: 'accounts.spotify.com',
+      path: '/api/token',
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': postData.length
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (result.access_token) {
+            spotifyAccessToken = result.access_token;
+            spotifyTokenExpiry = Date.now() + (result.expires_in * 1000) - 60000; // Refresh 1 min early
+            resolve(spotifyAccessToken);
+          } else {
+            reject(new Error('No access token received'));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
+
+// Spotify API - Search for track
+function searchSpotifyTrack(artist, trackName) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const token = await getSpotifyAccessToken();
+      const query = encodeURIComponent(`track:${trackName} artist:${artist}`);
+
+      const options = {
+        hostname: 'api.spotify.com',
+        path: `/v1/search?q=${query}&type=track&limit=1`,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      https.get(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            if (result.tracks && result.tracks.items && result.tracks.items.length > 0) {
+              const track = result.tracks.items[0];
+              resolve({
+                previewUrl: track.preview_url,
+                spotifyUrl: track.external_urls.spotify,
+                name: track.name,
+                artist: track.artists[0].name
+              });
+            } else {
+              resolve(null);
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }).on('error', reject);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 // Routes
 app.get('/', (req, res) => {
   res.redirect('/vinyls');
@@ -199,6 +296,25 @@ app.post('/api/vinyls/:id/refresh', async (req, res) => {
       res.json({ success: true, vinyl: updated });
     } else {
       res.json({ success: false, message: 'Could not refresh from Discogs' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get Spotify preview URL for a track
+app.get('/api/spotify/preview', async (req, res) => {
+  try {
+    const { artist, track } = req.query;
+    if (!artist || !track) {
+      return res.status(400).json({ success: false, message: 'Artist and track required' });
+    }
+
+    const result = await searchSpotifyTrack(artist, track);
+    if (result && result.previewUrl) {
+      res.json({ success: true, previewUrl: result.previewUrl, spotifyUrl: result.spotifyUrl });
+    } else {
+      res.json({ success: false, message: 'No preview available' });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

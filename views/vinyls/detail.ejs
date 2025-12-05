@@ -62,7 +62,7 @@
             <h2>🎵 Track Listing</h2>
             <div class="tracklist">
                 <% vinyl.tracks.forEach((track, index) => { %>
-                    <div class="track-item">
+                    <div class="track-item" id="track-<%= index %>">
                         <div class="track-info">
                             <span class="track-position"><%= track.position || (index + 1) %></span>
                             <span class="track-title"><%= track.title %></span>
@@ -70,29 +70,24 @@
                                 <span class="track-duration"><%= track.duration %></span>
                             <% } %>
                         </div>
-                        <button onclick="playOnSpotify('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= track.title.replace(/'/g, "\\'") %>')"
-                                class="spotify-link">
-                            🎧 Play
-                        </button>
+                        <div class="track-controls">
+                            <button onclick="playTrack('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= track.title.replace(/'/g, "\\'") %>', <%= index %>)"
+                                    class="spotify-play-btn" id="play-btn-<%= index %>">
+                                ▶ Play
+                            </button>
+                            <audio class="track-audio" id="audio-<%= index %>" style="display: none;"></audio>
+                        </div>
                     </div>
                 <% }); %>
             </div>
         </div>
         <% } %>
 
-        <div id="spotify-player" style="display:none; position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); padding: 20px; z-index: 1000;">
-            <button onclick="closePlayer()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
-            <iframe id="spotify-iframe"
-                    style="border-radius:12px; width: 100%; height: 152px;"
-                    frameBorder="0"
-                    allowfullscreen=""
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy">
-            </iframe>
-        </div>
     </div>
 
     <script>
+        let currentlyPlayingIndex = null;
+
         async function deleteVinyl(id) {
             if (!confirm('Are you sure you want to delete this vinyl?')) return;
 
@@ -131,26 +126,73 @@
             }
         }
 
-        function playOnSpotify(artist, track) {
-            const query = encodeURIComponent(`${artist} ${track}`);
-            const spotifyUrl = `https://open.spotify.com/search/${query}`;
+        async function playTrack(artist, trackName, index) {
+            const audio = document.getElementById(`audio-${index}`);
+            const button = document.getElementById(`play-btn-${index}`);
+            const trackItem = document.getElementById(`track-${index}`);
 
-            // Open in small popup window
-            const width = 800;
-            const height = 600;
-            const left = (screen.width - width) / 2;
-            const top = (screen.height - height) / 2;
+            // If this track is already playing, pause it
+            if (currentlyPlayingIndex === index && !audio.paused) {
+                audio.pause();
+                button.innerHTML = '▶ Play';
+                button.classList.remove('playing');
+                trackItem.classList.remove('playing');
+                return;
+            }
 
-            window.open(
-                spotifyUrl,
-                'SpotifyPlayer',
-                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-            );
-        }
+            // Stop any currently playing track
+            if (currentlyPlayingIndex !== null && currentlyPlayingIndex !== index) {
+                const prevAudio = document.getElementById(`audio-${currentlyPlayingIndex}`);
+                const prevButton = document.getElementById(`play-btn-${currentlyPlayingIndex}`);
+                const prevTrack = document.getElementById(`track-${currentlyPlayingIndex}`);
+                prevAudio.pause();
+                prevButton.innerHTML = '▶ Play';
+                prevButton.classList.remove('playing');
+                prevTrack.classList.remove('playing');
+            }
 
-        function closePlayer() {
-            document.getElementById('spotify-player').style.display = 'none';
-            document.getElementById('spotify-iframe').src = '';
+            // If audio source is not set yet, fetch it from Spotify
+            if (!audio.src) {
+                button.innerHTML = '⏳ Loading...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/spotify/preview?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(trackName)}`);
+                    const data = await response.json();
+
+                    if (data.success && data.previewUrl) {
+                        audio.src = data.previewUrl;
+                        audio.load();
+                    } else {
+                        alert('⚠️ No preview available for this track');
+                        button.innerHTML = '▶ Play';
+                        button.disabled = false;
+                        return;
+                    }
+                } catch (error) {
+                    alert('Error loading track: ' + error.message);
+                    button.innerHTML = '▶ Play';
+                    button.disabled = false;
+                    return;
+                }
+
+                button.disabled = false;
+            }
+
+            // Play the track
+            audio.play();
+            button.innerHTML = '⏸ Pause';
+            button.classList.add('playing');
+            trackItem.classList.add('playing');
+            currentlyPlayingIndex = index;
+
+            // Reset button when track ends
+            audio.onended = () => {
+                button.innerHTML = '▶ Play';
+                button.classList.remove('playing');
+                trackItem.classList.remove('playing');
+                currentlyPlayingIndex = null;
+            };
         }
     </script>
 </body>
