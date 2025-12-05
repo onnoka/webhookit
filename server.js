@@ -182,6 +182,29 @@ app.delete('/api/vinyls/:id', (req, res) => {
   }
 });
 
+// Refresh vinyl (re-fetch from Discogs with tracks)
+app.post('/api/vinyls/:id/refresh', async (req, res) => {
+  try {
+    const vinyl = db.getVinylById(req.params.id);
+    if (!vinyl) {
+      return res.status(404).json({ success: false, message: 'Vinyl not found' });
+    }
+
+    // Re-fetch from Discogs with tracks
+    const updatedData = await searchDiscogs(vinyl.barcode);
+    if (updatedData) {
+      const updated = db.updateVinyl(req.params.id, {
+        tracks: updatedData.tracks
+      });
+      res.json({ success: true, vinyl: updated });
+    } else {
+      res.json({ success: false, message: 'Could not refresh from Discogs' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Start server
 console.log('🎵 Starting Vinyl Barcode Scanner...');
 console.log('📦 Using JSON file database (no MongoDB needed!)');

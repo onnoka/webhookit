@@ -29,6 +29,11 @@ header {
     border-bottom: 2px solid #f0f0f0;
 }
 
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
 h1 {
     color: #333;
     font-size: 2em;
