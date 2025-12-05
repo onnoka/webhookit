@@ -22,14 +22,14 @@
         <% } else { %>
             <div class="vinyl-grid">
                 <% vinyls.forEach(vinyl => { %>
-                    <div class="vinyl-card" data-id="<%= vinyl._id %>">
+                    <div class="vinyl-card" data-id="<%= vinyl.id %>">
                         <img src="<%= vinyl.coverUrl %>" alt="<%= vinyl.title %>">
                         <div class="vinyl-info">
                             <h3><%= vinyl.title %></h3>
                             <p class="artist"><%= vinyl.artist %></p>
                             <p class="year"><%= vinyl.year %></p>
                         </div>
-                        <button class="btn-delete" onclick="deleteVinyl('<%= vinyl._id %>')">🗑️</button>
+                        <button class="btn-delete" onclick="deleteVinyl('<%= vinyl.id %>')">🗑️</button>
                     </div>
                 <% }); %>
             </div>
