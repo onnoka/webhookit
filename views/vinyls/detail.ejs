@@ -94,24 +94,35 @@
     </div>
 
     <script>
+        function isMobile() {
+            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        }
+
         async function playAlbumOnSpotify(artist, album) {
             try {
                 const response = await fetch(`/api/spotify/album?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`);
                 const data = await response.json();
 
                 if (data.success && data.spotifyId) {
-                    // Show Spotify embed player inline
-                    const playerContainer = document.getElementById('spotify-player-container');
-                    const playerIframe = document.getElementById('spotify-player');
+                    // On mobile: open in Spotify app (Premium works there!)
+                    // On desktop: show embed player
+                    if (isMobile()) {
+                        // Open in Spotify app on mobile
+                        window.location.href = data.spotifyUri;
+                    } else {
+                        // Show Spotify embed player inline on desktop
+                        const playerContainer = document.getElementById('spotify-player-container');
+                        const playerIframe = document.getElementById('spotify-player');
 
-                    // Set the embed URL
-                    playerIframe.src = `https://open.spotify.com/embed/album/${data.spotifyId}?utm_source=generator`;
+                        // Set the embed URL
+                        playerIframe.src = `https://open.spotify.com/embed/album/${data.spotifyId}?utm_source=generator`;
 
-                    // Show the player
-                    playerContainer.style.display = 'block';
+                        // Show the player
+                        playerContainer.style.display = 'block';
 
-                    // Scroll to player
-                    playerContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Scroll to player
+                        playerContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                 } else {
                     alert('⚠️ Album niet gevonden op Spotify');
                 }
