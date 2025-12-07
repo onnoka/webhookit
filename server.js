@@ -382,7 +382,24 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
     if (albumData) {
       // Try to get high-quality cover from Spotify
       try {
-        const spotifyData = await searchSpotifyAlbum(albumData.artist, albumData.title);
+        // Clean album title by removing artist name for better Spotify matching
+        let cleanTitle = albumData.title;
+        if (albumData.artist && albumData.title) {
+          const cleanPatterns = [
+            new RegExp(`^${albumData.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]\\s*`, 'i'),
+            new RegExp(`^${albumData.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+`, 'i')
+          ];
+
+          for (const pattern of cleanPatterns) {
+            const cleaned = albumData.title.replace(pattern, '').trim();
+            if (cleaned !== albumData.title && cleaned.length > 0) {
+              cleanTitle = cleaned;
+              break;
+            }
+          }
+        }
+
+        const spotifyData = await searchSpotifyAlbum(albumData.artist, cleanTitle);
         if (spotifyData && spotifyData.images && spotifyData.images.length > 0) {
           // Get the highest quality image (first in array is usually largest)
           const bestImage = spotifyData.images[0];
@@ -509,8 +526,25 @@ app.post('/api/vinyls/refresh-all-covers', async (req, res) => {
 
     for (const vinyl of vinyls) {
       try {
-        // Search Spotify for this album
-        const spotifyData = await searchSpotifyAlbum(vinyl.artist, vinyl.title);
+        // Clean album title by removing artist name (same logic as Spotify search in detail page)
+        let cleanTitle = vinyl.title;
+        if (vinyl.artist && vinyl.title) {
+          const cleanPatterns = [
+            new RegExp(`^${vinyl.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]\\s*`, 'i'),
+            new RegExp(`^${vinyl.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+`, 'i')
+          ];
+
+          for (const pattern of cleanPatterns) {
+            const cleaned = vinyl.title.replace(pattern, '').trim();
+            if (cleaned !== vinyl.title && cleaned.length > 0) {
+              cleanTitle = cleaned;
+              break;
+            }
+          }
+        }
+
+        // Search Spotify for this album with cleaned title
+        const spotifyData = await searchSpotifyAlbum(vinyl.artist, cleanTitle);
 
         if (spotifyData && spotifyData.images && spotifyData.images.length > 0) {
           // Get the highest quality image
