@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const https = require('https');
+const fs = require('fs');
 const JsonDB = require('./lib/jsondb');
 
 const app = express();
@@ -284,7 +285,8 @@ function searchSpotifyAlbum(artist, albumTitle) {
                 name: album.name,
                 artist: album.artists[0].name,
                 releaseDate: album.release_date,
-                totalTracks: album.total_tracks
+                totalTracks: album.total_tracks,
+                images: album.images || [] // Array of images in different sizes
               });
             } else {
               resolve(null);
@@ -292,6 +294,45 @@ function searchSpotifyAlbum(artist, albumTitle) {
           } catch (error) {
             reject(error);
           }
+        });
+      }).on('error', reject);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Download and save image locally
+function downloadAndSaveImage(imageUrl, vinylId) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Create covers directory if it doesn't exist
+      const coversDir = path.join(__dirname, 'public', 'covers');
+      if (!fs.existsSync(coversDir)) {
+        fs.mkdirSync(coversDir, { recursive: true });
+      }
+
+      const fileName = `${vinylId}.jpg`;
+      const filePath = path.join(coversDir, fileName);
+
+      // Download image
+      https.get(imageUrl, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to download image: ${response.statusCode}`));
+          return;
+        }
+
+        const fileStream = fs.createWriteStream(filePath);
+        response.pipe(fileStream);
+
+        fileStream.on('finish', () => {
+          fileStream.close();
+          resolve(`/covers/${fileName}`); // Return web path
+        });
+
+        fileStream.on('error', (err) => {
+          fs.unlink(filePath, () => {}); // Delete partial file
+          reject(err);
         });
       }).on('error', reject);
     } catch (error) {
@@ -339,6 +380,26 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
   try {
     const albumData = await searchDiscogs(req.params.barcode);
     if (albumData) {
+      // Try to get high-quality cover from Spotify
+      try {
+        const spotifyData = await searchSpotifyAlbum(albumData.artist, albumData.title);
+        if (spotifyData && spotifyData.images && spotifyData.images.length > 0) {
+          // Get the highest quality image (first in array is usually largest)
+          const bestImage = spotifyData.images[0];
+
+          // Generate temporary ID for download (will be replaced with real ID on save)
+          const tempId = Date.now().toString();
+          const localCoverPath = await downloadAndSaveImage(bestImage.url, tempId);
+
+          // Update album data with local cover path
+          albumData.coverUrl = localCoverPath;
+          albumData.tempCoverId = tempId; // Store temp ID for later renaming
+        }
+      } catch (spotifyError) {
+        console.log('Spotify cover fetch failed, using Discogs cover:', spotifyError.message);
+        // Continue with Discogs cover if Spotify fails
+      }
+
       res.json({ success: true, album: albumData });
     } else {
       res.json({ success: false, message: 'Album not found' });
@@ -351,8 +412,38 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
 // Add vinyl to collection
 app.post('/api/vinyls', (req, res) => {
   try {
-    const vinyl = db.addVinyl(req.body);
-    res.json({ success: true, id: vinyl.id });
+    const vinylData = req.body;
+
+    // If there's a temp cover ID, rename the file to use the final vinyl ID
+    if (vinylData.tempCoverId && vinylData.coverUrl) {
+      const coversDir = path.join(__dirname, 'public', 'covers');
+      const tempFileName = `${vinylData.tempCoverId}.jpg`;
+      const tempFilePath = path.join(coversDir, tempFileName);
+
+      // Add vinyl first to get the real ID
+      const vinyl = db.addVinyl(vinylData);
+
+      // Now rename the cover file to use the real vinyl ID
+      try {
+        const newFileName = `${vinyl.id}.jpg`;
+        const newFilePath = path.join(coversDir, newFileName);
+
+        if (fs.existsSync(tempFilePath)) {
+          fs.renameSync(tempFilePath, newFilePath);
+          // Update the vinyl record with the new cover path
+          db.updateVinyl(vinyl.id, { coverUrl: `/covers/${newFileName}` });
+        }
+      } catch (renameError) {
+        console.error('Failed to rename cover file:', renameError);
+        // Continue anyway, the temp filename will work
+      }
+
+      res.json({ success: true, id: vinyl.id });
+    } else {
+      // No temp cover, just add normally
+      const vinyl = db.addVinyl(vinylData);
+      res.json({ success: true, id: vinyl.id });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -361,7 +452,24 @@ app.post('/api/vinyls', (req, res) => {
 // Delete vinyl
 app.delete('/api/vinyls/:id', (req, res) => {
   try {
+    const vinyl = db.getVinylById(req.params.id);
+
+    // Delete the vinyl from database
     db.deleteVinyl(req.params.id);
+
+    // Also delete the cover file if it's a local file
+    if (vinyl && vinyl.coverUrl && vinyl.coverUrl.startsWith('/covers/')) {
+      const coverPath = path.join(__dirname, 'public', vinyl.coverUrl);
+      try {
+        if (fs.existsSync(coverPath)) {
+          fs.unlinkSync(coverPath);
+        }
+      } catch (fileError) {
+        console.error('Failed to delete cover file:', fileError);
+        // Continue anyway, database delete is more important
+      }
+    }
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
