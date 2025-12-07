@@ -549,11 +549,13 @@ h1 {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Mobile: smaller search bar */
+/* Mobile: prevent search bar expansion */
 @media (max-width: 768px) {
     .controls-bar input[type="text"] {
-        max-width: none;
-        font-size: 14px;
+        flex: 0 1 auto;
+        max-width: 100%;
+        font-size: 16px;
+        width: 200px;
     }
 }
 
@@ -726,7 +728,7 @@ h1 {
 }
 
 .mobile-only {
-    display: none;
+    display: none !important;
 }
 
 @media (max-width: 768px) {
@@ -735,7 +737,7 @@ h1 {
     }
 
     .mobile-only {
-        display: flex;
+        display: flex !important;
     }
 }
 
