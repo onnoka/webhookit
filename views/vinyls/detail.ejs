@@ -65,21 +65,12 @@
             <h2>🎵 Track Listing</h2>
             <div class="tracklist">
                 <% vinyl.tracks.forEach((track, index) => { %>
-                    <div class="track-item" id="track-<%= index %>">
-                        <div class="track-info">
-                            <span class="track-position"><%= track.position || (index + 1) %></span>
-                            <span class="track-title"><%= track.title %></span>
-                            <% if (track.duration) { %>
-                                <span class="track-duration"><%= track.duration %></span>
-                            <% } %>
-                        </div>
-                        <div class="track-controls">
-                            <button onclick="playTrack('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= track.title.replace(/'/g, "\\'") %>', <%= index %>)"
-                                    class="spotify-play-btn" id="play-btn-<%= index %>">
-                                ▶ Play
-                            </button>
-                            <audio class="track-audio" id="audio-<%= index %>" style="display: none;"></audio>
-                        </div>
+                    <div class="track-item">
+                        <span class="track-position"><%= track.position || (index + 1) %></span>
+                        <span class="track-title"><%= track.title %></span>
+                        <% if (track.duration) { %>
+                            <span class="track-duration"><%= track.duration %></span>
+                        <% } %>
                     </div>
                 <% }); %>
             </div>
@@ -89,8 +80,6 @@
     </div>
 
     <script>
-        let currentlyPlayingIndex = null;
-
         async function playAlbumOnSpotify(artist, album) {
             try {
                 const response = await fetch(`/api/spotify/album?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`);
@@ -161,75 +150,6 @@
             } catch (error) {
                 alert('Error: ' + error.message);
             }
-        }
-
-        async function playTrack(artist, trackName, index) {
-            const audio = document.getElementById(`audio-${index}`);
-            const button = document.getElementById(`play-btn-${index}`);
-            const trackItem = document.getElementById(`track-${index}`);
-
-            // If this track is already playing, pause it
-            if (currentlyPlayingIndex === index && !audio.paused) {
-                audio.pause();
-                button.innerHTML = '▶ Play';
-                button.classList.remove('playing');
-                trackItem.classList.remove('playing');
-                return;
-            }
-
-            // Stop any currently playing track
-            if (currentlyPlayingIndex !== null && currentlyPlayingIndex !== index) {
-                const prevAudio = document.getElementById(`audio-${currentlyPlayingIndex}`);
-                const prevButton = document.getElementById(`play-btn-${currentlyPlayingIndex}`);
-                const prevTrack = document.getElementById(`track-${currentlyPlayingIndex}`);
-                prevAudio.pause();
-                prevButton.innerHTML = '▶ Play';
-                prevButton.classList.remove('playing');
-                prevTrack.classList.remove('playing');
-            }
-
-            // If audio source is not set yet, fetch it from Spotify
-            if (!audio.src) {
-                button.innerHTML = '⏳ Loading...';
-                button.disabled = true;
-
-                try {
-                    const response = await fetch(`/api/spotify/preview?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(trackName)}`);
-                    const data = await response.json();
-
-                    if (data.success && data.previewUrl) {
-                        audio.src = data.previewUrl;
-                        audio.load();
-                    } else {
-                        alert('⚠️ No preview available for this track');
-                        button.innerHTML = '▶ Play';
-                        button.disabled = false;
-                        return;
-                    }
-                } catch (error) {
-                    alert('Error loading track: ' + error.message);
-                    button.innerHTML = '▶ Play';
-                    button.disabled = false;
-                    return;
-                }
-
-                button.disabled = false;
-            }
-
-            // Play the track
-            audio.play();
-            button.innerHTML = '⏸ Pause';
-            button.classList.add('playing');
-            trackItem.classList.add('playing');
-            currentlyPlayingIndex = index;
-
-            // Reset button when track ends
-            audio.onended = () => {
-                button.innerHTML = '▶ Play';
-                button.classList.remove('playing');
-                trackItem.classList.remove('playing');
-                currentlyPlayingIndex = null;
-            };
         }
     </script>
 </body>
