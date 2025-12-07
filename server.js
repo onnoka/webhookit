@@ -499,6 +499,64 @@ app.post('/api/vinyls/:id/refresh', async (req, res) => {
   }
 });
 
+// Refresh all vinyl covers from Spotify
+app.post('/api/vinyls/refresh-all-covers', async (req, res) => {
+  try {
+    const vinyls = db.getAllVinyls();
+    let updated = 0;
+    let failed = 0;
+    const results = [];
+
+    for (const vinyl of vinyls) {
+      try {
+        // Search Spotify for this album
+        const spotifyData = await searchSpotifyAlbum(vinyl.artist, vinyl.title);
+
+        if (spotifyData && spotifyData.images && spotifyData.images.length > 0) {
+          // Get the highest quality image
+          const bestImage = spotifyData.images[0];
+
+          // Download and save with vinyl ID
+          const localCoverPath = await downloadAndSaveImage(bestImage.url, vinyl.id);
+
+          // Delete old cover if it was a local file
+          if (vinyl.coverUrl && vinyl.coverUrl.startsWith('/covers/')) {
+            const oldCoverPath = path.join(__dirname, 'public', vinyl.coverUrl);
+            try {
+              if (fs.existsSync(oldCoverPath) && oldCoverPath !== path.join(__dirname, 'public', localCoverPath)) {
+                fs.unlinkSync(oldCoverPath);
+              }
+            } catch (e) {
+              console.log('Could not delete old cover:', e.message);
+            }
+          }
+
+          // Update vinyl with new cover
+          db.updateVinyl(vinyl.id, { coverUrl: localCoverPath });
+          updated++;
+          results.push({ id: vinyl.id, title: vinyl.title, status: 'updated' });
+        } else {
+          failed++;
+          results.push({ id: vinyl.id, title: vinyl.title, status: 'no_spotify_match' });
+        }
+      } catch (error) {
+        failed++;
+        results.push({ id: vinyl.id, title: vinyl.title, status: 'error', error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      total: vinyls.length,
+      updated,
+      failed,
+      results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Get Spotify preview URL for a track
 app.get('/api/spotify/preview', async (req, res) => {
   try {
