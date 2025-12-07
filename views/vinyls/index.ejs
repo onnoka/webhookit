@@ -3,38 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Vinyl Collection</title>
+    <title>Vinyl Collection</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <div class="collection-container">
-        <header class="collection-header">
-            <h1>🎵 My Vinyl Collection</h1>
-            <a href="/vinyls/add" class="btn btn-add">+</a>
-        </header>
-
+<body class="collection-body">
+    <div class="collection-wrapper">
         <% if (vinyls.length === 0) { %>
             <div class="empty-state">
-                <h2>No vinyls yet!</h2>
-                <p>Start building your collection by scanning a barcode.</p>
-                <a href="/vinyls/add" class="btn btn-primary">Scan First Vinyl</a>
+                <h2>No vinyls yet</h2>
+                <p>Start scanning</p>
+                <a href="/vinyls/add" class="btn btn-primary">+</a>
             </div>
         <% } else { %>
-            <!-- Search and Sort Controls -->
-            <div class="controls">
-                <div class="search-container">
-                    <input type="text"
-                           id="searchInput"
-                           placeholder="🔍 Search your collection..."
-                           autocomplete="off">
-                </div>
-                <div class="sort-container">
-                    <label>Sort:</label>
+            <!-- Minimalist Controls Bar -->
+            <div class="controls-bar">
+                <input type="text"
+                       id="searchInput"
+                       placeholder="Search..."
+                       autocomplete="off">
+
+                <div class="sort-controls">
                     <button class="sort-btn active" data-sort="recent">Recent</button>
                     <button class="sort-btn" data-sort="artist">Artist</button>
                     <button class="sort-btn" data-sort="album">Album</button>
                     <button class="sort-btn" data-sort="year">Year</button>
                 </div>
+
+                <a href="/vinyls/add" class="btn-add-minimal">+</a>
             </div>
 
             <!-- Vinyl Grid -->
@@ -63,7 +58,7 @@
             <!-- No Results Message -->
             <div id="noResults" class="no-results" style="display: none;">
                 <h3>No albums found</h3>
-                <p>Try a different search term</p>
+                <p>Try a different search</p>
             </div>
         <% } %>
     </div>
@@ -81,7 +76,7 @@
                 const query = e.target.value.toLowerCase().trim();
 
                 if (query.length < 2 && query.length > 0) {
-                    return; // Wait for at least 2 characters
+                    return;
                 }
 
                 let visibleCount = 0;
@@ -94,7 +89,6 @@
                     if (matches || query.length === 0) visibleCount++;
                 });
 
-                // Show/hide no results message
                 noResults.style.display = visibleCount === 0 ? 'block' : 'none';
                 vinylGrid.style.display = visibleCount === 0 ? 'none' : 'grid';
             });
@@ -103,14 +97,12 @@
         // Sort functionality
         document.querySelectorAll('.sort-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // Update active button
                 document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
                 const sortType = btn.dataset.sort;
                 currentSort = sortType;
 
-                // Sort vinyls
                 const sorted = [...vinyls].sort((a, b) => {
                     switch(sortType) {
                         case 'artist':
@@ -125,7 +117,6 @@
                     }
                 });
 
-                // Re-append in sorted order
                 sorted.forEach(vinyl => vinylGrid.appendChild(vinyl));
             });
         });
