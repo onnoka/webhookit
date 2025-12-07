@@ -69,11 +69,24 @@
 
             <!-- Vinyl Grid -->
             <div class="vinyl-grid-modern" id="vinylGrid">
-                <% vinyls.forEach(vinyl => { %>
+                <% vinyls.forEach(vinyl => {
+                    // Extract clean album name by removing artist prefix
+                    let cleanAlbum = vinyl.title;
+                    if (vinyl.artist && vinyl.title) {
+                        // Try to remove "Artist - " or "Artist: " from the beginning
+                        const artistPrefix = new RegExp(`^${vinyl.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]\\s*`, 'i');
+                        cleanAlbum = vinyl.title.replace(artistPrefix, '').trim();
+                        // If nothing changed, try just removing artist followed by space
+                        if (cleanAlbum === vinyl.title) {
+                            const artistPrefixSimple = new RegExp(`^${vinyl.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+`, 'i');
+                            cleanAlbum = vinyl.title.replace(artistPrefixSimple, '').trim();
+                        }
+                    }
+                %>
                     <div class="vinyl-item"
                          data-id="<%= vinyl.id %>"
                          data-artist="<%= vinyl.artist.toLowerCase() %>"
-                         data-album="<%= vinyl.title.toLowerCase() %>"
+                         data-album="<%= cleanAlbum.toLowerCase() %>"
                          data-year="<%= vinyl.year || '0' %>"
                          data-created="<%= vinyl.createdAt %>">
                         <a href="/vinyls/<%= vinyl.id %>" class="vinyl-cover">
