@@ -46,20 +46,20 @@ function searchDiscogs(barcode) {
           if (result.results && result.results.length > 0) {
             const release = result.results[0];
 
-            // Get full release details including tracks
+            // Get full release details including tracks and original year
             if (release.id) {
               getReleaseDetails(release.id).then(details => {
                 resolve({
                   title: release.title || 'Unknown',
                   artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
-                  year: release.year || 'Unknown',
+                  year: details.originalYear || release.year || 'Unknown',
                   label: release.label ? release.label[0] : 'Unknown',
                   coverUrl: release.cover_image || release.thumb || '/placeholder.jpg',
                   barcode: barcode,
                   tracks: details.tracklist || []
                 });
               }).catch(() => {
-                // Fallback without tracks
+                // Fallback without tracks and original year
                 resolve({
                   title: release.title || 'Unknown',
                   artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
@@ -111,7 +111,49 @@ function getReleaseDetails(releaseId) {
       res.on('end', () => {
         try {
           const release = JSON.parse(data);
-          resolve(release);
+
+          // If release has a master_id, fetch the master to get original year
+          if (release.master_id) {
+            getMasterRelease(release.master_id).then(master => {
+              release.originalYear = master.year || release.year;
+              resolve(release);
+            }).catch(() => {
+              // Fallback to release year if master fetch fails
+              release.originalYear = release.year;
+              resolve(release);
+            });
+          } else {
+            release.originalYear = release.year;
+            resolve(release);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Get master release from Discogs (for original release year)
+function getMasterRelease(masterId) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.discogs.com',
+      path: `/masters/${masterId}`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'VinylBarcodeScanner/2.0',
+        'Authorization': `Discogs token=${DISCOGS_TOKEN}`
+      }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const master = JSON.parse(data);
+          resolve(master);
         } catch (error) {
           reject(error);
         }
