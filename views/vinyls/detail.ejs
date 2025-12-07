@@ -97,8 +97,26 @@
                 const data = await response.json();
 
                 if (data.success && data.spotifyUri) {
-                    // Use Spotify URI to open directly in Spotify app (no new tab)
-                    window.location.href = data.spotifyUri;
+                    // Open Spotify in background using hidden iframe
+                    // This keeps focus on the app while starting Spotify
+                    let iframe = document.getElementById('spotify-launcher');
+                    if (!iframe) {
+                        iframe = document.createElement('iframe');
+                        iframe.id = 'spotify-launcher';
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                    }
+                    iframe.src = data.spotifyUri;
+
+                    // Show feedback
+                    const allButtons = document.querySelectorAll('.btn-spotify');
+                    allButtons.forEach(btn => {
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '✓ Spotify gestart...';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                        }, 2000);
+                    });
                 } else {
                     alert('⚠️ Album niet gevonden op Spotify');
                 }
