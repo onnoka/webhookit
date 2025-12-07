@@ -519,10 +519,12 @@ app.post('/api/vinyls/:id/refresh', async (req, res) => {
 // Refresh all vinyl covers from Spotify
 app.post('/api/vinyls/refresh-all-covers', async (req, res) => {
   try {
-    const vinyls = db.getAllVinyls();
+    const data = db.read(); // Read once at start
+    const vinyls = data.vinyls || [];
     let updated = 0;
     let failed = 0;
     const results = [];
+    const updates = {}; // Track which vinyls need updating
 
     for (const vinyl of vinyls) {
       try {
@@ -565,8 +567,8 @@ app.post('/api/vinyls/refresh-all-covers', async (req, res) => {
             }
           }
 
-          // Update vinyl with new cover
-          db.updateVinyl(vinyl.id, { coverUrl: localCoverPath });
+          // Store update for batch write
+          updates[vinyl.id] = localCoverPath;
           updated++;
           results.push({ id: vinyl.id, title: vinyl.title, status: 'updated' });
         } else {
@@ -577,6 +579,17 @@ app.post('/api/vinyls/refresh-all-covers', async (req, res) => {
         failed++;
         results.push({ id: vinyl.id, title: vinyl.title, status: 'error', error: error.message });
       }
+    }
+
+    // Apply all updates in one batch write (creates only ONE backup)
+    if (Object.keys(updates).length > 0) {
+      data.vinyls = data.vinyls.map(vinyl => {
+        if (updates[vinyl.id]) {
+          return { ...vinyl, coverUrl: updates[vinyl.id] };
+        }
+        return vinyl;
+      });
+      db.write(data); // Single write = single backup
     }
 
     res.json({
