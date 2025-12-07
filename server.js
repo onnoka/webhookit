@@ -493,6 +493,43 @@ app.delete('/api/vinyls/:id', (req, res) => {
   }
 });
 
+// Update vinyl cover
+app.post('/api/vinyls/:id/cover', async (req, res) => {
+  try {
+    const vinyl = db.getVinylById(req.params.id);
+    if (!vinyl) {
+      return res.status(404).json({ success: false, message: 'Vinyl not found' });
+    }
+
+    const { coverUrl } = req.body;
+    if (!coverUrl) {
+      return res.status(400).json({ success: false, message: 'Cover URL required' });
+    }
+
+    // Download and save the new cover
+    const localCoverPath = await downloadAndSaveImage(coverUrl, vinyl.id);
+
+    // Delete old cover if different
+    if (vinyl.coverUrl && vinyl.coverUrl.startsWith('/covers/') && vinyl.coverUrl !== localCoverPath) {
+      const oldCoverPath = path.join(__dirname, 'public', vinyl.coverUrl);
+      try {
+        if (fs.existsSync(oldCoverPath)) {
+          fs.unlinkSync(oldCoverPath);
+        }
+      } catch (e) {
+        console.log('Could not delete old cover:', e.message);
+      }
+    }
+
+    // Update vinyl with new cover
+    db.updateVinyl(vinyl.id, { coverUrl: localCoverPath });
+
+    res.json({ success: true, coverUrl: localCoverPath });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Refresh vinyl (re-fetch from Discogs with tracks)
 app.post('/api/vinyls/:id/refresh', async (req, res) => {
   try {

@@ -37,8 +37,6 @@
                     <button class="grid-size-btn desktop-only" data-size="10" title="10 columns">⚏⚏⚏</button>
                 </div>
 
-                <button class="btn-refresh-covers desktop-only" id="refreshCoversBtn" title="Refresh all covers from Spotify">🔄</button>
-
                 <a href="/vinyls/add" class="btn-add-minimal desktop-only">+</a>
 
                 <!-- Mobile Hamburger Menu -->
@@ -64,7 +62,6 @@
                         <button class="sort-btn-mobile" data-sort="year">Year</button>
                     </div>
                     <div class="mobile-menu-section">
-                        <button class="btn-refresh-mobile" id="refreshCoversMobile">🔄 Refresh All Covers</button>
                         <a href="/vinyls/add" class="btn-add-mobile">+ Add Vinyl</a>
                     </div>
                 </div>
@@ -239,72 +236,6 @@
                 mobileMenu.classList.remove('active');
             });
         });
-
-        // Refresh all covers functionality
-        async function refreshAllCovers() {
-            const btn = document.getElementById('refreshCoversBtn');
-            const mobilBtn = document.getElementById('refreshCoversMobile');
-
-            if (!confirm('Refresh all album covers from Spotify? This may take a while.')) {
-                return;
-            }
-
-            // Disable buttons and show loading
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = '⏳';
-            }
-            if (mobilBtn) {
-                mobilBtn.disabled = true;
-                mobilBtn.textContent = '⏳ Refreshing...';
-            }
-
-            try {
-                const response = await fetch('/api/vinyls/refresh-all-covers', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(`Covers refreshed!\n\nUpdated: ${result.updated}\nFailed: ${result.failed}\nTotal: ${result.total}`);
-                    // Reload page to show new covers
-                    window.location.reload();
-                } else {
-                    alert('Failed to refresh covers: ' + result.message);
-                }
-            } catch (error) {
-                alert('Error refreshing covers: ' + error.message);
-            } finally {
-                // Re-enable buttons
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = '🔄';
-                }
-                if (mobilBtn) {
-                    mobilBtn.disabled = false;
-                    mobilBtn.textContent = '🔄 Refresh All Covers';
-                }
-            }
-        }
-
-        // Add event listeners for refresh buttons
-        const refreshBtn = document.getElementById('refreshCoversBtn');
-        const refreshMobileBtn = document.getElementById('refreshCoversMobile');
-
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', refreshAllCovers);
-        }
-
-        if (refreshMobileBtn) {
-            refreshMobileBtn.addEventListener('click', () => {
-                mobileMenu.classList.remove('active');
-                refreshAllCovers();
-            });
-        }
     </script>
 </body>
 </html>

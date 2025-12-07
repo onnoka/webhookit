@@ -6,94 +6,104 @@
     <title><%= vinyl.title %> - Vinyl Collection</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <a href="/vinyls" class="btn btn-back">← Back to Collection</a>
-            <div class="header-actions">
-                <button onclick="playAlbumOnSpotify('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= vinyl.title.replace(/'/g, "\\'") %>')" class="btn btn-spotify">
-                    🎵 Play Album on Spotify
-                </button>
-                <button onclick="refreshTracks('<%= vinyl.id %>')" class="btn btn-secondary">🔄 Refresh Tracks</button>
-                <button onclick="deleteVinyl('<%= vinyl.id %>')" class="btn btn-danger">🗑️ Delete</button>
-            </div>
-        </header>
+<body class="detail-body">
+    <!-- Top Bar -->
+    <div class="detail-top-bar">
+        <a href="/vinyls" class="btn-back-minimal">← Back</a>
+        <div class="detail-actions">
+            <button onclick="playAlbumOnSpotify('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= vinyl.title.replace(/'/g, "\\'") %>')" class="btn-action-minimal">
+                🎵 Play
+            </button>
+            <button onclick="deleteVinyl('<%= vinyl.id %>')" class="btn-action-minimal btn-danger-minimal">
+                🗑️
+            </button>
+        </div>
+    </div>
 
-        <div class="detail-page">
-            <div class="detail-cover">
-                <img src="<%= vinyl.coverUrl %>" alt="<%= vinyl.title %>">
-            </div>
+    <!-- Main Content -->
+    <div class="detail-container">
+        <!-- Cover Section -->
+        <div class="detail-cover-section">
+            <img id="vinylCover" src="<%= vinyl.coverUrl %>" alt="<%= vinyl.title %>" class="detail-cover-img">
 
-            <div class="detail-info">
-                <h1><%= vinyl.title %></h1>
-
-                <div class="info-section">
-                    <h3>Artist</h3>
-                    <p><%= vinyl.artist %></p>
-                </div>
-
-                <div class="info-section">
-                    <h3>Year</h3>
-                    <p><%= vinyl.year %></p>
-                </div>
-
-                <div class="info-section">
-                    <h3>Label</h3>
-                    <p><%= vinyl.label %></p>
-                </div>
-
-                <div class="info-section">
-                    <h3>Barcode</h3>
-                    <p><code><%= vinyl.barcode %></code></p>
-                </div>
-
-                <div class="info-section">
-                    <h3>Added to Collection</h3>
-                    <p><%= new Date(vinyl.createdAt).toLocaleDateString('nl-NL', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) %></p>
+            <!-- Cover Replace Section -->
+            <div class="cover-replace-section">
+                <h3>Change Cover</h3>
+                <input type="text"
+                       id="newCoverUrl"
+                       placeholder="Paste image URL here..."
+                       class="cover-url-input">
+                <div class="cover-actions">
+                    <button onclick="previewCover()" class="btn-cover-action">Preview</button>
+                    <button onclick="saveCover('<%= vinyl.id %>')" class="btn-cover-action btn-save">Save</button>
+                    <button onclick="searchCover()" class="btn-cover-action">🔍 Search</button>
                 </div>
             </div>
         </div>
 
-        <!-- Spotify Player Container -->
-        <div id="spotify-player-container" style="display: none; margin: 30px 0;">
-            <div style="position: relative;">
-                <button onclick="closeSpotifyPlayer()" style="position: absolute; top: -10px; right: -10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; z-index: 10;">×</button>
+        <!-- Info Section -->
+        <div class="detail-info-section">
+            <h1 class="detail-title"><%= vinyl.title %></h1>
+            <p class="detail-artist"><%= vinyl.artist %></p>
+
+            <div class="detail-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Year</span>
+                    <span class="meta-value"><%= vinyl.year %></span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Label</span>
+                    <span class="meta-value"><%= vinyl.label %></span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Barcode</span>
+                    <span class="meta-value"><%= vinyl.barcode %></span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Added</span>
+                    <span class="meta-value"><%= new Date(vinyl.createdAt).toLocaleDateString('nl-NL', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    }) %></span>
+                </div>
+            </div>
+
+            <!-- Spotify Player Container -->
+            <div id="spotify-player-container" class="spotify-player-minimal">
+                <button onclick="closeSpotifyPlayer()" class="close-player">×</button>
                 <iframe id="spotify-player"
-                        style="border-radius:12px; width: 100%; height: 352px;"
+                        style="border-radius:8px; width: 100%; height: 352px;"
                         frameBorder="0"
                         allowfullscreen=""
                         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                         loading="lazy">
                 </iframe>
             </div>
-        </div>
 
-        <% if (vinyl.tracks && vinyl.tracks.length > 0) { %>
-        <div class="tracklist-section">
-            <h2>🎵 Track Listing</h2>
-            <div class="tracklist">
-                <% vinyl.tracks.forEach((track, index) => { %>
-                    <div class="track-item">
-                        <span class="track-position"><%= track.position || (index + 1) %></span>
-                        <span class="track-title"><%= track.title %></span>
-                        <% if (track.duration) { %>
-                            <span class="track-duration"><%= track.duration %></span>
-                        <% } %>
-                    </div>
-                <% }); %>
+            <!-- Tracklist -->
+            <% if (vinyl.tracks && vinyl.tracks.length > 0) { %>
+            <div class="detail-tracklist">
+                <h2>Tracks</h2>
+                <div class="track-list">
+                    <% vinyl.tracks.forEach((track, index) => { %>
+                        <div class="track">
+                            <span class="track-num"><%= track.position || (index + 1) %></span>
+                            <span class="track-name"><%= track.title %></span>
+                            <% if (track.duration) { %>
+                                <span class="track-time"><%= track.duration %></span>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                </div>
             </div>
+            <% } %>
         </div>
-        <% } %>
-
     </div>
 
     <script>
+        let originalCoverUrl = '<%= vinyl.coverUrl %>';
+
         function isMobile() {
             return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         }
@@ -104,23 +114,13 @@
                 const data = await response.json();
 
                 if (data.success && data.spotifyId) {
-                    // On mobile: open in Spotify app (Premium works there!)
-                    // On desktop: show embed player
                     if (isMobile()) {
-                        // Open in Spotify app on mobile
                         window.location.href = data.spotifyUri;
                     } else {
-                        // Show Spotify embed player inline on desktop
                         const playerContainer = document.getElementById('spotify-player-container');
                         const playerIframe = document.getElementById('spotify-player');
-
-                        // Set the embed URL
                         playerIframe.src = `https://open.spotify.com/embed/album/${data.spotifyId}?utm_source=generator`;
-
-                        // Show the player
                         playerContainer.style.display = 'block';
-
-                        // Scroll to player
                         playerContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 } else {
@@ -134,11 +134,7 @@
         function closeSpotifyPlayer() {
             const playerContainer = document.getElementById('spotify-player-container');
             const playerIframe = document.getElementById('spotify-player');
-
-            // Hide player
             playerContainer.style.display = 'none';
-
-            // Stop playback by clearing src
             playerIframe.src = '';
         }
 
@@ -146,10 +142,7 @@
             if (!confirm('Are you sure you want to delete this vinyl?')) return;
 
             try {
-                const response = await fetch(`/api/vinyls/${id}`, {
-                    method: 'DELETE'
-                });
-
+                const response = await fetch(`/api/vinyls/${id}`, { method: 'DELETE' });
                 if (response.ok) {
                     window.location.href = '/vinyls';
                 } else {
@@ -160,24 +153,54 @@
             }
         }
 
-        async function refreshTracks(id) {
-            if (!confirm('Refresh track listing from Discogs? This may take a few seconds.')) return;
+        function previewCover() {
+            const url = document.getElementById('newCoverUrl').value.trim();
+            if (!url) {
+                alert('Please paste an image URL first');
+                return;
+            }
+
+            const img = document.getElementById('vinylCover');
+            img.src = url;
+        }
+
+        async function saveCover(vinylId) {
+            const url = document.getElementById('newCoverUrl').value.trim();
+            if (!url) {
+                alert('Please paste an image URL first');
+                return;
+            }
+
+            if (!confirm('Save this cover image?')) return;
 
             try {
-                const response = await fetch(`/api/vinyls/${id}/refresh`, {
-                    method: 'POST'
+                const response = await fetch(`/api/vinyls/${vinylId}/cover`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coverUrl: url })
                 });
 
-                const data = await response.json();
-                if (data.success) {
-                    alert('✓ Tracks refreshed!');
+                const result = await response.json();
+                if (result.success) {
+                    alert('✓ Cover saved!');
+                    originalCoverUrl = result.coverUrl;
+                    document.getElementById('newCoverUrl').value = '';
                     location.reload();
                 } else {
-                    alert('Error: ' + data.message);
+                    alert('Error: ' + result.message);
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
+                // Restore original on error
+                document.getElementById('vinylCover').src = originalCoverUrl;
             }
+        }
+
+        function searchCover() {
+            const artist = '<%= vinyl.artist.replace(/'/g, "\\'") %>';
+            const album = '<%= vinyl.title.replace(/'/g, "\\'") %>';
+            const searchQuery = `${artist} ${album} vinyl cover high quality`;
+            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchQuery)}`, '_blank');
         }
     </script>
 </body>
