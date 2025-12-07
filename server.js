@@ -237,6 +237,7 @@ function searchSpotifyAlbum(artist, albumTitle) {
               const album = result.albums.items[0];
               resolve({
                 spotifyUrl: album.external_urls.spotify,
+                spotifyUri: album.uri,
                 name: album.name,
                 artist: album.artists[0].name,
                 releaseDate: album.release_date,
@@ -390,7 +391,7 @@ app.get('/api/spotify/album', async (req, res) => {
 
     const result = await searchSpotifyAlbum(artist, album);
     if (result && result.spotifyUrl) {
-      res.json({ success: true, spotifyUrl: result.spotifyUrl });
+      res.json({ success: true, spotifyUrl: result.spotifyUrl, spotifyUri: result.spotifyUri });
     } else {
       res.json({ success: false, message: 'Album not found on Spotify' });
     }

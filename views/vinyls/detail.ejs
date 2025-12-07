@@ -96,8 +96,9 @@
                 const response = await fetch(`/api/spotify/album?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`);
                 const data = await response.json();
 
-                if (data.success && data.spotifyUrl) {
-                    window.open(data.spotifyUrl, '_blank');
+                if (data.success && data.spotifyUri) {
+                    // Use Spotify URI to open directly in Spotify app (no new tab)
+                    window.location.href = data.spotifyUri;
                 } else {
                     alert('⚠️ Album niet gevonden op Spotify');
                 }
