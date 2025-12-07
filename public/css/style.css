@@ -613,7 +613,7 @@ h1 {
 /* Modern Vinyl Grid */
 .vinyl-grid-modern {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0;
     padding: 0;
     background: #000;
@@ -706,54 +706,13 @@ h1 {
 }
 
 /* Responsive */
-@media (max-width: 1600px) {
-    .vinyl-grid-modern {
-        grid-template-columns: repeat(8, 1fr);
-    }
-}
-
-@media (max-width: 1200px) {
-    .vinyl-grid-modern {
-        grid-template-columns: repeat(6, 1fr);
-    }
-}
-
 @media (max-width: 768px) {
-    .collection-header {
-        padding: 20px;
-    }
-
-    .collection-header h1 {
-        font-size: 1.8em;
-    }
-
-    .controls {
-        padding: 15px 20px;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .sort-container {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .vinyl-grid-modern {
-        grid-template-columns: repeat(5, 1fr);
-    }
-
     .vinyl-overlay-content h3 {
         font-size: 0.8em;
     }
 
     .vinyl-overlay-content p {
         font-size: 0.7em;
-    }
-}
-
-@media (max-width: 480px) {
-    .vinyl-grid-modern {
-        grid-template-columns: repeat(3, 1fr);
     }
 }
 
@@ -918,4 +877,34 @@ h1 {
 .btn-add-mobile:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.02);
+}
+
+/* Grid Size Selector */
+.grid-size-selector {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.grid-size-btn {
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 28px;
+}
+
+.grid-size-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.grid-size-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
 }

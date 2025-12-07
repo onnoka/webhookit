@@ -30,6 +30,13 @@
                     <button class="sort-btn" data-sort="year">Year</button>
                 </div>
 
+                <!-- Grid Size Selector -->
+                <div class="grid-size-selector">
+                    <button class="grid-size-btn" data-size="3" title="3 columns">⚏</button>
+                    <button class="grid-size-btn active" data-size="5" title="5 columns">⚏⚏</button>
+                    <button class="grid-size-btn desktop-only" data-size="10" title="10 columns">⚏⚏⚏</button>
+                </div>
+
                 <a href="/vinyls/add" class="btn-add-minimal desktop-only">+</a>
 
                 <!-- Mobile Hamburger Menu -->
@@ -100,6 +107,29 @@
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const closeMenu = document.getElementById('closeMenu');
         let currentSort = 'recent';
+        let currentGridSize = localStorage.getItem('gridSize') || '5';
+
+        // Set initial grid size from localStorage
+        vinylGrid.style.gridTemplateColumns = `repeat(${currentGridSize}, 1fr)`;
+        document.querySelector(`.grid-size-btn[data-size="${currentGridSize}"]`)?.classList.add('active');
+
+        // Grid size selector
+        document.querySelectorAll('.grid-size-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const size = btn.dataset.size;
+                currentGridSize = size;
+
+                // Update active state
+                document.querySelectorAll('.grid-size-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update grid
+                vinylGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+                // Save to localStorage
+                localStorage.setItem('gridSize', size);
+            });
+        });
 
         // Mobile menu toggle
         if (hamburgerBtn) {
