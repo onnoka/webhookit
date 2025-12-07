@@ -369,9 +369,23 @@ app.get('/api/spotify/preview', async (req, res) => {
 // Get Spotify album URL
 app.get('/api/spotify/album', async (req, res) => {
   try {
-    const { artist, album } = req.query;
+    let { artist, album } = req.query;
     if (!artist || !album) {
       return res.status(400).json({ success: false, message: 'Artist and album required' });
+    }
+
+    // Clean album title: remove artist name if it's at the start
+    // Pattern: "Artist - Album" or "Artist: Album" -> "Album"
+    const cleanPatterns = [
+      new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]\\s*`, 'i'),
+      new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+`, 'i')
+    ];
+
+    for (const pattern of cleanPatterns) {
+      if (pattern.test(album)) {
+        album = album.replace(pattern, '').trim();
+        break;
+      }
     }
 
     const result = await searchSpotifyAlbum(artist, album);
