@@ -22,14 +22,42 @@
                        placeholder="Search..."
                        autocomplete="off">
 
-                <div class="sort-controls">
+                <!-- Desktop Controls -->
+                <div class="sort-controls desktop-only">
                     <button class="sort-btn active" data-sort="recent">Recent</button>
                     <button class="sort-btn" data-sort="artist">Artist</button>
                     <button class="sort-btn" data-sort="album">Album</button>
                     <button class="sort-btn" data-sort="year">Year</button>
                 </div>
 
-                <a href="/vinyls/add" class="btn-add-minimal">+</a>
+                <a href="/vinyls/add" class="btn-add-minimal desktop-only">+</a>
+
+                <!-- Mobile Hamburger Menu -->
+                <button class="hamburger-btn mobile-only" id="hamburgerBtn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+
+            <!-- Mobile Menu Overlay -->
+            <div class="mobile-menu" id="mobileMenu">
+                <div class="mobile-menu-content">
+                    <div class="mobile-menu-header">
+                        <h3>Menu</h3>
+                        <button class="close-menu" id="closeMenu">×</button>
+                    </div>
+                    <div class="mobile-menu-section">
+                        <h4>Sort By</h4>
+                        <button class="sort-btn-mobile active" data-sort="recent">Recent</button>
+                        <button class="sort-btn-mobile" data-sort="artist">Artist</button>
+                        <button class="sort-btn-mobile" data-sort="album">Album</button>
+                        <button class="sort-btn-mobile" data-sort="year">Year</button>
+                    </div>
+                    <div class="mobile-menu-section">
+                        <a href="/vinyls/add" class="btn-add-mobile">+ Add Vinyl</a>
+                    </div>
+                </div>
             </div>
 
             <!-- Vinyl Grid -->
@@ -68,7 +96,32 @@
         const searchInput = document.getElementById('searchInput');
         const vinylGrid = document.getElementById('vinylGrid');
         const noResults = document.getElementById('noResults');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const closeMenu = document.getElementById('closeMenu');
         let currentSort = 'recent';
+
+        // Mobile menu toggle
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', () => {
+                mobileMenu.classList.add('active');
+            });
+        }
+
+        if (closeMenu) {
+            closeMenu.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+            });
+        }
+
+        // Close menu when clicking outside
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', (e) => {
+                if (e.target === mobileMenu) {
+                    mobileMenu.classList.remove('active');
+                }
+            });
+        }
 
         // Search functionality
         if (searchInput) {
@@ -94,7 +147,26 @@
             });
         }
 
-        // Sort functionality
+        // Sort function
+        function sortVinyls(sortType) {
+            const sorted = [...vinyls].sort((a, b) => {
+                switch(sortType) {
+                    case 'artist':
+                        return a.dataset.artist.localeCompare(b.dataset.artist);
+                    case 'album':
+                        return a.dataset.album.localeCompare(b.dataset.album);
+                    case 'year':
+                        return parseInt(b.dataset.year) - parseInt(a.dataset.year);
+                    case 'recent':
+                    default:
+                        return new Date(b.dataset.created) - new Date(a.dataset.created);
+                }
+            });
+
+            sorted.forEach(vinyl => vinylGrid.appendChild(vinyl));
+        }
+
+        // Desktop sort functionality
         document.querySelectorAll('.sort-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -102,22 +174,23 @@
 
                 const sortType = btn.dataset.sort;
                 currentSort = sortType;
+                sortVinyls(sortType);
+            });
+        });
 
-                const sorted = [...vinyls].sort((a, b) => {
-                    switch(sortType) {
-                        case 'artist':
-                            return a.dataset.artist.localeCompare(b.dataset.artist);
-                        case 'album':
-                            return a.dataset.album.localeCompare(b.dataset.album);
-                        case 'year':
-                            return parseInt(b.dataset.year) - parseInt(a.dataset.year);
-                        case 'recent':
-                        default:
-                            return new Date(b.dataset.created) - new Date(a.dataset.created);
-                    }
-                });
+        // Mobile sort functionality
+        document.querySelectorAll('.sort-btn-mobile').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.sort-btn-mobile').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
 
-                sorted.forEach(vinyl => vinylGrid.appendChild(vinyl));
+                const sortType = btn.dataset.sort;
+                currentSort = sortType;
+                sortVinyls(sortType);
+
+                // Close mobile menu
+                mobileMenu.classList.remove('active');
             });
         });
     </script>
