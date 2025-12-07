@@ -60,6 +60,20 @@
             </div>
         </div>
 
+        <!-- Spotify Player Container -->
+        <div id="spotify-player-container" style="display: none; margin: 30px 0;">
+            <div style="position: relative;">
+                <button onclick="closeSpotifyPlayer()" style="position: absolute; top: -10px; right: -10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; z-index: 10;">×</button>
+                <iframe id="spotify-player"
+                        style="border-radius:12px; width: 100%; height: 352px;"
+                        frameBorder="0"
+                        allowfullscreen=""
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy">
+                </iframe>
+            </div>
+        </div>
+
         <% if (vinyl.tracks && vinyl.tracks.length > 0) { %>
         <div class="tracklist-section">
             <h2>🎵 Track Listing</h2>
@@ -85,33 +99,36 @@
                 const response = await fetch(`/api/spotify/album?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`);
                 const data = await response.json();
 
-                if (data.success && data.spotifyUri) {
-                    // Open Spotify in background using hidden iframe
-                    // This keeps focus on the app while starting Spotify
-                    let iframe = document.getElementById('spotify-launcher');
-                    if (!iframe) {
-                        iframe = document.createElement('iframe');
-                        iframe.id = 'spotify-launcher';
-                        iframe.style.display = 'none';
-                        document.body.appendChild(iframe);
-                    }
-                    iframe.src = data.spotifyUri;
+                if (data.success && data.spotifyId) {
+                    // Show Spotify embed player inline
+                    const playerContainer = document.getElementById('spotify-player-container');
+                    const playerIframe = document.getElementById('spotify-player');
 
-                    // Show feedback
-                    const allButtons = document.querySelectorAll('.btn-spotify');
-                    allButtons.forEach(btn => {
-                        const originalText = btn.innerHTML;
-                        btn.innerHTML = '✓ Spotify gestart...';
-                        setTimeout(() => {
-                            btn.innerHTML = originalText;
-                        }, 2000);
-                    });
+                    // Set the embed URL
+                    playerIframe.src = `https://open.spotify.com/embed/album/${data.spotifyId}?utm_source=generator`;
+
+                    // Show the player
+                    playerContainer.style.display = 'block';
+
+                    // Scroll to player
+                    playerContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
                     alert('⚠️ Album niet gevonden op Spotify');
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
             }
+        }
+
+        function closeSpotifyPlayer() {
+            const playerContainer = document.getElementById('spotify-player-container');
+            const playerIframe = document.getElementById('spotify-player');
+
+            // Hide player
+            playerContainer.style.display = 'none';
+
+            // Stop playback by clearing src
+            playerIframe.src = '';
         }
 
         async function deleteVinyl(id) {
