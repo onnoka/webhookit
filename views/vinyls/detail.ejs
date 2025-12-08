@@ -101,6 +101,7 @@
         </div>
     </div>
 
+    <script src="/js/auth.js"></script>
     <script>
         let originalCoverUrl = '<%= vinyl.coverUrl %>';
 
@@ -142,13 +143,16 @@
             if (!confirm('Are you sure you want to delete this vinyl?')) return;
 
             try {
-                const response = await fetch(`/api/vinyls/${id}`, { method: 'DELETE' });
+                const response = await PINAuth.protectedFetch(`/api/vinyls/${id}`, { method: 'DELETE' });
                 if (response.ok) {
                     window.location.href = '/vinyls';
                 } else {
                     alert('Error deleting vinyl');
                 }
             } catch (error) {
+                if (error.message === 'Authentication cancelled') {
+                    return;
+                }
                 alert('Error: ' + error.message);
             }
         }
@@ -174,7 +178,7 @@
             if (!confirm('Save this cover image?')) return;
 
             try {
-                const response = await fetch(`/api/vinyls/${vinylId}/cover`, {
+                const response = await PINAuth.protectedFetch(`/api/vinyls/${vinylId}/cover`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ coverUrl: url })
@@ -190,6 +194,10 @@
                     alert('Error: ' + result.message);
                 }
             } catch (error) {
+                if (error.message === 'Authentication cancelled') {
+                    document.getElementById('vinylCover').src = originalCoverUrl;
+                    return;
+                }
                 alert('Error: ' + error.message);
                 // Restore original on error
                 document.getElementById('vinylCover').src = originalCoverUrl;
@@ -201,6 +209,40 @@
             const album = '<%= vinyl.title.replace(/'/g, "\\'") %>';
             const searchQuery = `${artist} ${album} vinyl cover high quality`;
             window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchQuery)}`, '_blank');
+        }
+
+        async function updateVinylType(vinylId) {
+            const selectedType = document.getElementById('vinylType').value;
+            const select = document.getElementById('vinylType');
+            const originalValue = select.value;
+
+            try {
+                const response = await PINAuth.protectedFetch(`/api/vinyls/${vinylId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: selectedType })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // Visual feedback
+                    select.style.background = 'rgba(0, 255, 0, 0.2)';
+                    setTimeout(() => {
+                        select.style.background = '';
+                    }, 500);
+                } else {
+                    alert('Error updating type: ' + result.message);
+                    select.value = originalValue;
+                }
+            } catch (error) {
+                if (error.message === 'Authentication cancelled') {
+                    // Restore original value
+                    select.value = originalValue;
+                    return;
+                }
+                alert('Error: ' + error.message);
+                select.value = originalValue;
+            }
         }
     </script>
 </body>

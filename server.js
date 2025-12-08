@@ -8,6 +8,7 @@ const JsonDB = require('./lib/jsondb');
 const app = express();
 const PORT = process.env.PORT || 8124;
 const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN || 'pEbvHbIafRFLJcNkfZQmTBhrhacSEuKZrhFrHcIn';
+const AUTH_PIN = process.env.AUTH_PIN || '2026';
 
 // Spotify API credentials (using client credentials flow)
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || 'a030c7e726654eac9f62b72856e8380a';
@@ -24,6 +25,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// PIN Authentication Middleware
+function requirePIN(req, res, next) {
+  const pin = req.headers['x-auth-pin'] || req.body.pin || req.query.pin;
+
+  if (pin === AUTH_PIN) {
+    next();
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid PIN', requiresAuth: true });
+  }
+}
 
 // Discogs API Helper
 function searchDiscogs(barcode) {
@@ -427,7 +439,7 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
 });
 
 // Add vinyl to collection
-app.post('/api/vinyls', (req, res) => {
+app.post('/api/vinyls', requirePIN, (req, res) => {
   try {
     const vinylData = req.body;
 
@@ -467,7 +479,7 @@ app.post('/api/vinyls', (req, res) => {
 });
 
 // Delete vinyl
-app.delete('/api/vinyls/:id', (req, res) => {
+app.delete('/api/vinyls/:id', requirePIN, (req, res) => {
   try {
     const vinyl = db.getVinylById(req.params.id);
 
@@ -494,7 +506,7 @@ app.delete('/api/vinyls/:id', (req, res) => {
 });
 
 // Update vinyl cover
-app.post('/api/vinyls/:id/cover', async (req, res) => {
+app.post('/api/vinyls/:id/cover', requirePIN, async (req, res) => {
   try {
     const vinyl = db.getVinylById(req.params.id);
     if (!vinyl) {
@@ -525,6 +537,31 @@ app.post('/api/vinyls/:id/cover', async (req, res) => {
     db.updateVinyl(vinyl.id, { coverUrl: localCoverPath });
 
     res.json({ success: true, coverUrl: localCoverPath });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update vinyl fields (type, etc.)
+app.patch('/api/vinyls/:id', requirePIN, (req, res) => {
+  try {
+    const vinyl = db.getVinylById(req.params.id);
+    if (!vinyl) {
+      return res.status(404).json({ success: false, message: 'Vinyl not found' });
+    }
+
+    // Update allowed fields
+    const allowedFields = ['type'];
+    const updates = {};
+
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    db.updateVinyl(req.params.id, updates);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

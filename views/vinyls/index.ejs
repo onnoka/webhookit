@@ -44,6 +44,10 @@
                     <button class="grid-size-btn desktop-only" data-size="10" title="10 columns">⚏⚏⚏</button>
                 </div>
 
+                <button class="btn-logout-desktop desktop-only" id="logoutBtnDesktop" style="display: none;" title="Logout">
+                    🔓
+                </button>
+
                 <a href="/vinyls/add" class="btn-add-minimal desktop-only">+</a>
 
                 <!-- Mobile Hamburger Menu -->
@@ -76,6 +80,11 @@
                     </div>
                     <div class="mobile-menu-section">
                         <a href="/vinyls/add" class="btn-add-mobile">+ Add Vinyl</a>
+                    </div>
+                    <div class="mobile-menu-section">
+                        <button class="btn-logout-mobile" id="logoutBtn" style="display: none;">
+                            <span>🔓</span> Logout
+                        </button>
                     </div>
                 </div>
             </div>
@@ -286,6 +295,46 @@
                 mobileMenu.classList.remove('active');
             });
         });
+
+        // Check authentication status and show/hide logout button
+        function updateLogoutButton() {
+            const logoutBtnMobile = document.getElementById('logoutBtn');
+            const logoutBtnDesktop = document.getElementById('logoutBtnDesktop');
+
+            if (PINAuth && PINAuth.isAuthenticated()) {
+                if (logoutBtnMobile) logoutBtnMobile.style.display = 'block';
+                if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'inline-block';
+            } else {
+                if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+                if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+            }
+        }
+
+        // Logout functionality
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                PINAuth.logout();
+                updateLogoutButton();
+                alert('✓ Logged out successfully');
+            }
+        }
+
+        // Initialize logout buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtnMobile = document.getElementById('logoutBtn');
+            const logoutBtnDesktop = document.getElementById('logoutBtnDesktop');
+
+            if (logoutBtnMobile) {
+                logoutBtnMobile.addEventListener('click', logout);
+            }
+
+            if (logoutBtnDesktop) {
+                logoutBtnDesktop.addEventListener('click', logout);
+            }
+
+            updateLogoutButton();
+        });
     </script>
+    <script src="/js/auth.js"></script>
 </body>
 </html>

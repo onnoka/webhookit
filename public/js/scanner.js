@@ -104,7 +104,7 @@ async function addToCollection() {
     };
 
     try {
-        const response = await fetch('/api/vinyls', {
+        const response = await PINAuth.protectedFetch('/api/vinyls', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -131,6 +131,10 @@ async function addToCollection() {
             alert('Error adding to collection');
         }
     } catch (error) {
+        if (error.message === 'Authentication cancelled') {
+            // User cancelled PIN entry, do nothing
+            return;
+        }
         alert('Error: ' + error.message);
     }
 }
