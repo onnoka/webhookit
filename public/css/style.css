@@ -1862,3 +1862,108 @@ h1 {
 .btn-logout-mobile span {
     font-size: 16px;
 }
+
+/* Manual Search Section */
+.search-input-section {
+    margin-top: 20px;
+}
+
+.search-inputs {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Search Results Dropdown */
+.search-results {
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-result-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-cover {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.search-result-info {
+    flex: 1;
+}
+
+.search-result-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.search-result-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.search-no-results {
+    padding: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+}
+
+.search-loading {
+    padding: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .search-inputs {
+        flex-direction: column;
+    }
+}

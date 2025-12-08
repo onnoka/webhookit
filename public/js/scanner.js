@@ -166,3 +166,109 @@ document.getElementById('manual-barcode').addEventListener('keypress', (e) => {
 
 document.getElementById('add-to-collection').addEventListener('click', addToCollection);
 document.getElementById('scan-another').addEventListener('click', scanAnother);
+
+// Manual search functionality
+let searchTimeout = null;
+const artistInput = document.getElementById('search-artist');
+const titleInput = document.getElementById('search-title');
+const searchResults = document.getElementById('search-results');
+
+async function performSearch() {
+    const artist = artistInput.value.trim();
+    const title = titleInput.value.trim();
+
+    if (!artist && !title) {
+        searchResults.style.display = 'none';
+        return;
+    }
+
+    // Show loading
+    searchResults.style.display = 'block';
+    searchResults.innerHTML = '<div class="search-loading">Searching...</div>';
+
+    try {
+        const params = new URLSearchParams();
+        if (artist) params.append('artist', artist);
+        if (title) params.append('title', title);
+
+        const response = await fetch(`/api/search?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.success && data.results.length > 0) {
+            displaySearchResults(data.results);
+        } else {
+            searchResults.innerHTML = '<div class="search-no-results">No results found. Try different search terms.</div>';
+        }
+    } catch (error) {
+        searchResults.innerHTML = '<div class="search-no-results">Error searching. Please try again.</div>';
+        console.error('Search error:', error);
+    }
+}
+
+function displaySearchResults(results) {
+    searchResults.innerHTML = '';
+
+    results.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML = `
+            <img src="${result.coverUrl}" alt="${result.title}" class="search-result-cover">
+            <div class="search-result-info">
+                <div class="search-result-title">${result.title}</div>
+                <div class="search-result-meta">${result.year} · ${result.format}</div>
+            </div>
+        `;
+
+        item.addEventListener('click', async () => {
+            // Get full details for this release
+            await selectSearchResult(result);
+        });
+
+        searchResults.appendChild(item);
+    });
+}
+
+async function selectSearchResult(result) {
+    searchResults.style.display = 'none';
+    const loading = document.getElementById('loading');
+
+    loading.style.display = 'block';
+
+    try {
+        // Fetch full release details from Discogs
+        const response = await fetch(`/api/vinyls/search/release/${result.id}`);
+        const data = await response.json();
+
+        loading.style.display = 'none';
+
+        if (data.success && data.album) {
+            currentAlbumData = data.album;
+            displayAlbum(data.album);
+
+            // Clear search inputs
+            artistInput.value = '';
+            titleInput.value = '';
+        } else {
+            alert('Could not fetch album details');
+        }
+    } catch (error) {
+        loading.style.display = 'none';
+        alert('Error: ' + error.message);
+    }
+}
+
+// Debounced search on input
+function handleSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(performSearch, 500); // Wait 500ms after user stops typing
+}
+
+artistInput.addEventListener('input', handleSearchInput);
+titleInput.addEventListener('input', handleSearchInput);
+
+// Hide results when clicking outside
+document.addEventListener('click', (e) => {
+    if (!searchResults.contains(e.target) && e.target !== artistInput && e.target !== titleInput) {
+        searchResults.style.display = 'none';
+    }
+});

@@ -34,6 +34,18 @@
                 <input type="text" id="manual-barcode" placeholder="Enter barcode manually" class="barcode-input">
                 <button id="manual-search" class="scan-btn scan-btn-primary">Search</button>
             </div>
+
+            <!-- Manual Search by Artist/Title -->
+            <div class="search-input-section">
+                <div class="input-divider">or</div>
+                <div class="search-inputs">
+                    <input type="text" id="search-artist" placeholder="Artist name" class="search-input">
+                    <input type="text" id="search-title" placeholder="Album title" class="search-input">
+                </div>
+
+                <!-- Search Results Dropdown -->
+                <div id="search-results" class="search-results" style="display:none;"></div>
+            </div>
         </div>
 
         <!-- Result Section -->

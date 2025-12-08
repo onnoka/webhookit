@@ -387,6 +387,46 @@ app.get('/vinyls/:id', (req, res) => {
   }
 });
 
+// Get full release details by Discogs ID
+app.get('/api/vinyls/search/release/:id', async (req, res) => {
+  try {
+    const releaseId = req.params.id;
+
+    const releaseDetails = await getReleaseDetails(releaseId);
+
+    if (releaseDetails) {
+      const albumData = {
+        title: releaseDetails.title || 'Unknown',
+        artist: releaseDetails.artists ? releaseDetails.artists[0].name : 'Unknown',
+        year: releaseDetails.originalYear || releaseDetails.year || 'Unknown',
+        label: releaseDetails.labels ? releaseDetails.labels[0].name : 'Unknown',
+        coverUrl: releaseDetails.images && releaseDetails.images.length > 0 ? releaseDetails.images[0].uri : '/placeholder.jpg',
+        barcode: releaseDetails.identifiers ? releaseDetails.identifiers.find(id => id.type === 'Barcode')?.value || 'N/A' : 'N/A',
+        tracks: releaseDetails.tracklist || []
+      };
+
+      // Try to get high-quality cover from Spotify
+      try {
+        const spotifyData = await searchSpotifyAlbum(albumData.artist, albumData.title);
+        if (spotifyData && spotifyData.images && spotifyData.images.length > 0) {
+          const tempId = Date.now().toString();
+          const localCoverPath = await downloadAndSaveImage(spotifyData.images[0].url, tempId);
+          albumData.coverUrl = localCoverPath;
+          albumData.tempCoverId = tempId;
+        }
+      } catch (spotifyError) {
+        console.log('Spotify cover fetch failed, using Discogs cover');
+      }
+
+      res.json({ success: true, album: albumData });
+    } else {
+      res.json({ success: false, message: 'Release not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Search by barcode API
 app.get('/api/vinyls/search/:barcode', async (req, res) => {
   try {
@@ -435,6 +475,70 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Search Discogs by artist and/or title
+app.get('/api/search', async (req, res) => {
+  try {
+    const { artist, title } = req.query;
+
+    if (!artist && !title) {
+      return res.json({ success: false, message: 'Artist or title required', results: [] });
+    }
+
+    // Build search query
+    let query = '';
+    if (artist && title) {
+      query = `${artist} ${title}`;
+    } else if (artist) {
+      query = artist;
+    } else {
+      query = title;
+    }
+
+    const options = {
+      hostname: 'api.discogs.com',
+      path: `/database/search?q=${encodeURIComponent(query)}&type=release&format=vinyl`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'VinylBarcodeScanner/2.0',
+        'Authorization': `Discogs token=${DISCOGS_TOKEN}`
+      }
+    };
+
+    https.get(options, (response) => {
+      let data = '';
+      response.on('data', chunk => data += chunk);
+      response.on('end', async () => {
+        try {
+          const result = JSON.parse(data);
+
+          if (result.results && result.results.length > 0) {
+            // Process first 10 results
+            const releases = result.results.slice(0, 10).map(release => ({
+              id: release.id,
+              title: release.title || 'Unknown',
+              artist: release.title ? release.title.split(' - ')[0] : 'Unknown',
+              year: release.year || 'Unknown',
+              label: release.label ? release.label[0] : 'Unknown',
+              coverUrl: release.cover_image || release.thumb || '/placeholder.jpg',
+              format: release.format ? release.format.join(', ') : 'Vinyl'
+            }));
+
+            res.json({ success: true, results: releases });
+          } else {
+            res.json({ success: true, results: [] });
+          }
+        } catch (error) {
+          res.status(500).json({ success: false, message: error.message, results: [] });
+        }
+      });
+    }).on('error', (error) => {
+      res.status(500).json({ success: false, message: error.message, results: [] });
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message, results: [] });
   }
 });
 
