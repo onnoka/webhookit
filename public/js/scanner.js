@@ -94,20 +94,39 @@ function displayAlbum(album) {
 async function addToCollection() {
     if (!currentAlbumData) return;
 
+    // Get selected type from dropdown
+    const selectedType = document.getElementById('vinyl-type').value;
+
+    // Add type to album data
+    const vinylData = {
+        ...currentAlbumData,
+        type: selectedType
+    };
+
     try {
         const response = await fetch('/api/vinyls', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(currentAlbumData)
+            body: JSON.stringify(vinylData)
         });
 
         const data = await response.json();
 
         if (data.success) {
-            alert('✓ Added to collection!');
-            window.location.href = '/vinyls';
+            // Show success feedback
+            const btn = document.getElementById('add-to-collection');
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Added!';
+            btn.style.background = '#00ff00';
+
+            // Reset after 1 second and prepare for next scan
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+                scanAnother();
+            }, 1000);
         } else {
             alert('Error adding to collection');
         }

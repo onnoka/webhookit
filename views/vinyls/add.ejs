@@ -7,55 +7,67 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://unpkg.com/@zxing/library@latest"></script>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>📷 Scan Vinyl Barcode</h1>
-            <a href="/vinyls" class="btn-back">← Back to Collection</a>
-        </header>
+<body class="scan-body">
+    <div class="scan-container">
+        <!-- Minimalist Header -->
+        <div class="scan-header">
+            <a href="/vinyls" class="back-link">← Back</a>
+            <h1>Scan Vinyl</h1>
+        </div>
 
-        <div class="scanner-section">
-            <div id="scanner-container">
+        <!-- Scanner Section -->
+        <div class="scanner-section-minimal">
+            <div id="scanner-container" class="scanner-frame">
                 <video id="video" autoplay playsinline></video>
                 <div id="scanner-overlay">
                     <div class="scanner-line"></div>
                 </div>
             </div>
 
-            <div class="controls">
-                <button id="start-camera" class="btn btn-primary">Start Camera</button>
-                <button id="stop-camera" class="btn btn-secondary" style="display:none;">Stop Camera</button>
+            <div class="scanner-controls">
+                <button id="start-camera" class="scan-btn scan-btn-primary">Start Camera</button>
+                <button id="stop-camera" class="scan-btn scan-btn-secondary" style="display:none;">Stop Camera</button>
             </div>
 
-            <div class="manual-input">
-                <p>Or enter barcode manually:</p>
-                <div class="input-group">
-                    <input type="text" id="manual-barcode" placeholder="Enter barcode number">
-                    <button id="manual-search" class="btn btn-primary">Search</button>
+            <div class="manual-input-minimal">
+                <div class="input-divider">or</div>
+                <input type="text" id="manual-barcode" placeholder="Enter barcode manually" class="barcode-input">
+                <button id="manual-search" class="scan-btn scan-btn-primary">Search</button>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result" class="result-section" style="display:none;">
+            <div class="result-card">
+                <img id="album-cover" src="" alt="Album cover" class="result-cover">
+                <div class="result-info">
+                    <h2 id="album-title" class="result-title"></h2>
+                    <p class="result-artist"><span id="album-artist"></span></p>
+                    <div class="result-meta">
+                        <span id="album-year"></span>
+                        <span class="meta-sep">·</span>
+                        <span id="album-label"></span>
+                    </div>
+                    <p class="result-barcode"><span id="album-barcode"></span></p>
+                </div>
+                <div class="type-selector">
+                    <label for="vinyl-type">Type:</label>
+                    <select id="vinyl-type" class="type-dropdown">
+                        <option value="album">Album</option>
+                        <option value="single">Single</option>
+                    </select>
+                </div>
+                <div class="result-actions">
+                    <button id="add-to-collection" class="scan-btn scan-btn-success">Add to Collection</button>
+                    <button id="scan-another" class="scan-btn scan-btn-ghost">Scan Another</button>
                 </div>
             </div>
         </div>
 
-        <div id="result" style="display:none;">
-            <div class="album-card">
-                <img id="album-cover" src="" alt="Album cover">
-                <div class="album-info">
-                    <h2 id="album-title"></h2>
-                    <p><strong>Artist:</strong> <span id="album-artist"></span></p>
-                    <p><strong>Year:</strong> <span id="album-year"></span></p>
-                    <p><strong>Label:</strong> <span id="album-label"></span></p>
-                    <p><strong>Barcode:</strong> <span id="album-barcode"></span></p>
-                </div>
-                <div class="album-actions">
-                    <button id="add-to-collection" class="btn btn-success">✓ Add to Collection</button>
-                    <button id="scan-another" class="btn btn-secondary">Scan Another</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="loading" style="display:none;">
-            <div class="loader"></div>
-            <p>Searching Discogs...</p>
+        <!-- Loading State -->
+        <div id="loading" class="loading-state" style="display:none;">
+            <div class="loading-spinner"></div>
+            <p>Searching...</p>
         </div>
     </div>
 

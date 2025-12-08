@@ -30,6 +30,13 @@
                     <button class="sort-btn" data-sort="year">Year</button>
                 </div>
 
+                <!-- Filter Controls -->
+                <div class="filter-controls desktop-only">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="album">Albums</button>
+                    <button class="filter-btn" data-filter="single">Singles</button>
+                </div>
+
                 <!-- Grid Size Selector -->
                 <div class="grid-size-selector">
                     <button class="grid-size-btn" data-size="3" title="3 columns">⚏</button>
@@ -62,6 +69,12 @@
                         <button class="sort-btn-mobile" data-sort="year">Year</button>
                     </div>
                     <div class="mobile-menu-section">
+                        <h4>Filter</h4>
+                        <button class="filter-btn-mobile active" data-filter="all">All</button>
+                        <button class="filter-btn-mobile" data-filter="album">Albums</button>
+                        <button class="filter-btn-mobile" data-filter="single">Singles</button>
+                    </div>
+                    <div class="mobile-menu-section">
                         <a href="/vinyls/add" class="btn-add-mobile">+ Add Vinyl</a>
                     </div>
                 </div>
@@ -88,7 +101,8 @@
                          data-artist="<%= vinyl.artist.toLowerCase() %>"
                          data-album="<%= cleanAlbum.toLowerCase() %>"
                          data-year="<%= vinyl.year || '0' %>"
-                         data-created="<%= vinyl.createdAt %>">
+                         data-created="<%= vinyl.createdAt %>"
+                         data-type="<%= vinyl.type || 'album' %>">
                         <a href="/vinyls/<%= vinyl.id %>" class="vinyl-cover">
                             <img src="<%= vinyl.coverUrl %>" alt="<%= vinyl.title %>">
                             <div class="vinyl-overlay">
@@ -120,6 +134,7 @@
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const closeMenu = document.getElementById('closeMenu');
         let currentSort = 'recent';
+        let currentFilter = 'all';
         let currentGridSize = localStorage.getItem('gridSize') || '5';
 
         // Set initial grid size from localStorage
@@ -166,27 +181,36 @@
             });
         }
 
+        // Filter and search function
+        function applyFiltersAndSearch() {
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            let visibleCount = 0;
+            vinyls.forEach(vinyl => {
+                const artist = vinyl.dataset.artist;
+                const album = vinyl.dataset.album;
+                const type = vinyl.dataset.type || 'album';
+
+                // Check if matches search
+                const matchesSearch = query.length === 0 || query.length >= 2 && (artist.includes(query) || album.includes(query));
+
+                // Check if matches filter
+                const matchesFilter = currentFilter === 'all' || type === currentFilter;
+
+                // Show only if matches both
+                const shouldShow = matchesSearch && matchesFilter;
+                vinyl.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            vinylGrid.style.display = visibleCount === 0 ? 'none' : 'grid';
+        }
+
         // Search functionality
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase().trim();
-
-                if (query.length < 2 && query.length > 0) {
-                    return;
-                }
-
-                let visibleCount = 0;
-                vinyls.forEach(vinyl => {
-                    const artist = vinyl.dataset.artist;
-                    const album = vinyl.dataset.album;
-                    const matches = artist.includes(query) || album.includes(query);
-
-                    vinyl.style.display = matches || query.length === 0 ? '' : 'none';
-                    if (matches || query.length === 0) visibleCount++;
-                });
-
-                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-                vinylGrid.style.display = visibleCount === 0 ? 'none' : 'grid';
+            searchInput.addEventListener('input', () => {
+                applyFiltersAndSearch();
             });
         }
 
@@ -231,6 +255,32 @@
                 const sortType = btn.dataset.sort;
                 currentSort = sortType;
                 sortVinyls(sortType);
+
+                // Close mobile menu
+                mobileMenu.classList.remove('active');
+            });
+        });
+
+        // Desktop filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                currentFilter = btn.dataset.filter;
+                applyFiltersAndSearch();
+            });
+        });
+
+        // Mobile filter functionality
+        document.querySelectorAll('.filter-btn-mobile').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn-mobile').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                currentFilter = btn.dataset.filter;
+                applyFiltersAndSearch();
 
                 // Close mobile menu
                 mobileMenu.classList.remove('active');

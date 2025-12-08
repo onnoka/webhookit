@@ -593,6 +593,37 @@ h1 {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
+/* Filter Controls */
+.filter-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.filter-btn {
+    padding: 5px 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: capitalize;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.filter-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
 /* Minimal Add Button */
 .btn-add-minimal {
     width: 28px;
@@ -886,6 +917,34 @@ h1 {
 }
 
 .sort-btn-mobile.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.filter-btn-mobile {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+    text-align: left;
+    text-transform: capitalize;
+}
+
+.filter-btn-mobile:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.filter-btn-mobile.active {
     background: rgba(255, 255, 255, 0.15);
     color: #fff;
     border-color: rgba(255, 255, 255, 0.3);
@@ -1280,5 +1339,362 @@ h1 {
 
     .cover-replace-section {
         padding: 15px;
+    }
+}
+
+/* ==========================================
+   SCAN PAGE - MINIMALIST BLACK DESIGN
+   ========================================== */
+
+.scan-body {
+    background: #000;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.scan-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.scan-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.back-link {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #fff;
+}
+
+.scan-header h1 {
+    font-size: 1.8em;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+}
+
+.scanner-section-minimal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.scanner-frame {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 4/3;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.scanner-frame video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#scanner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.scanner-line {
+    width: 80%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00ff00, transparent);
+    animation: scan 2s ease-in-out infinite;
+}
+
+@keyframes scan {
+    0%, 100% {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.scanner-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.scan-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.scan-btn-primary {
+    background: #fff;
+    color: #000;
+}
+
+.scan-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.scan-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.scan-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.scan-btn-success {
+    background: #00ff00;
+    color: #000;
+}
+
+.scan-btn-success:hover {
+    background: #00dd00;
+    transform: translateY(-1px);
+}
+
+.scan-btn-ghost {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.scan-btn-ghost:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.manual-input-minimal {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.input-divider {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.barcode-input {
+    width: 100%;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.barcode-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.barcode-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.result-section {
+    margin-top: 40px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+}
+
+.result-cover {
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.result-info {
+    text-align: center;
+    width: 100%;
+}
+
+.result-title {
+    font-size: 1.8em;
+    font-weight: 300;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+
+.result-artist {
+    font-size: 1.2em;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 15px;
+}
+
+.result-meta {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.meta-sep {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.result-barcode {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+}
+
+.type-selector {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+.type-dropdown {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.type-dropdown:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.type-dropdown:focus {
+    outline: none;
+    border-color: #fff;
+}
+
+.result-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 60px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-state p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .scan-container {
+        padding: 20px 15px;
+    }
+
+    .scan-header h1 {
+        font-size: 1.4em;
+    }
+
+    .result-cover {
+        width: 200px;
+        height: 200px;
+    }
+
+    .result-title {
+        font-size: 1.4em;
+    }
+
+    .result-artist {
+        font-size: 1em;
+    }
+
+    .result-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .scan-btn {
+        width: 100%;
     }
 }
