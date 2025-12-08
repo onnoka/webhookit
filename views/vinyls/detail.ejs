@@ -110,6 +110,54 @@
         }
 
         async function playAlbumOnSpotify(artist, album) {
+            // Check if we have tracks for this vinyl
+            const hasTracks = <%= (vinyl.tracks && vinyl.tracks.length > 0) ? 'true' : 'false' %>;
+
+            if (hasTracks) {
+                // Play individual tracks (better for singles/maxi-singles)
+                await playVinylTracks(artist);
+            } else {
+                // Fallback to album search if no tracks available
+                await playAlbumFallback(artist, album);
+            }
+        }
+
+        async function playVinylTracks(artist) {
+            try {
+                const tracks = <%= JSON.stringify(vinyl.tracks || []) %>;
+
+                // Search for each track on Spotify
+                const response = await fetch('/api/spotify/tracks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ artist, tracks })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.tracks) {
+                    const foundTracks = data.tracks.filter(t => t.found);
+
+                    if (foundTracks.length > 0) {
+                        if (isMobile()) {
+                            // Open first track in Spotify app
+                            window.location.href = foundTracks[0].spotifyUrl;
+                        } else {
+                            // Show track list with play buttons
+                            showTrackPlayer(data.tracks);
+                        }
+                    } else {
+                        alert('⚠️ Tracks niet gevonden op Spotify');
+                    }
+                } else {
+                    alert('⚠️ Kon tracks niet zoeken op Spotify');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function playAlbumFallback(artist, album) {
             try {
                 const response = await fetch(`/api/spotify/album?artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}`);
                 const data = await response.json();
@@ -130,6 +178,64 @@
             } catch (error) {
                 alert('Error: ' + error.message);
             }
+        }
+
+        function showTrackPlayer(tracks) {
+            const playerContainer = document.getElementById('spotify-player-container');
+            const playerIframe = document.getElementById('spotify-player');
+
+            // Build track list HTML
+            let trackListHTML = '<div style="padding: 20px; max-height: 400px; overflow-y: auto;">';
+            trackListHTML += '<h3 style="color: #fff; margin-bottom: 15px;">🎵 Tracks on Spotify</h3>';
+
+            tracks.forEach((track, index) => {
+                if (track.found) {
+                    trackListHTML += `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer;"
+                             onclick="playTrack('${track.spotifyUrl}')"
+                             onmouseover="this.style.background='rgba(255,255,255,0.05)'"
+                             onmouseout="this.style.background='transparent'">
+                            <span style="color: rgba(255,255,255,0.5); font-size: 12px; min-width: 30px;">${track.position || (index + 1)}</span>
+                            <div style="flex: 1;">
+                                <div style="color: #fff; font-size: 14px;">${track.originalTitle}</div>
+                                <div style="color: rgba(255,255,255,0.5); font-size: 12px;">✓ ${track.spotifyName}</div>
+                            </div>
+                            <button style="background: #1DB954; color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer;">
+                                ▶ Play
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    trackListHTML += `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); opacity: 0.5;">
+                            <span style="color: rgba(255,255,255,0.5); font-size: 12px; min-width: 30px;">${track.position || (index + 1)}</span>
+                            <div style="flex: 1;">
+                                <div style="color: #fff; font-size: 14px;">${track.originalTitle}</div>
+                                <div style="color: rgba(255,100,100,0.8); font-size: 12px;">✗ Niet gevonden op Spotify</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            trackListHTML += '</div>';
+
+            // Replace iframe with track list
+            playerIframe.style.display = 'none';
+            let trackListEl = playerContainer.querySelector('.track-list-container');
+            if (!trackListEl) {
+                trackListEl = document.createElement('div');
+                trackListEl.className = 'track-list-container';
+                playerContainer.appendChild(trackListEl);
+            }
+            trackListEl.innerHTML = trackListHTML;
+
+            playerContainer.style.display = 'block';
+            playerContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function playTrack(spotifyUrl) {
+            window.open(spotifyUrl, '_blank');
         }
 
         function closeSpotifyPlayer() {

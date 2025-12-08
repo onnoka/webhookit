@@ -839,6 +839,75 @@ app.get('/api/spotify/album', async (req, res) => {
   }
 });
 
+// Search for individual tracks on Spotify
+app.post('/api/spotify/tracks', async (req, res) => {
+  try {
+    const { artist, tracks } = req.body;
+
+    if (!artist || !tracks || !Array.isArray(tracks)) {
+      return res.status(400).json({ success: false, message: 'Artist and tracks array required' });
+    }
+
+    const trackResults = [];
+
+    for (const track of tracks) {
+      try {
+        // Clean track title - remove track numbers, parentheses content for initial search
+        let cleanTrackTitle = track.title || track;
+        cleanTrackTitle = cleanTrackTitle.replace(/^[A-Z]?\d+[\.\-\s]*/i, ''); // Remove track numbers
+
+        const result = await searchSpotifyTrack(artist, cleanTrackTitle);
+
+        if (result && result.spotifyUrl) {
+          trackResults.push({
+            originalTitle: track.title || track,
+            position: track.position || '',
+            duration: track.duration || '',
+            found: true,
+            spotifyUrl: result.spotifyUrl,
+            previewUrl: result.previewUrl,
+            spotifyName: result.name
+          });
+        } else {
+          // Try with full title including parentheses
+          const resultFull = await searchSpotifyTrack(artist, track.title || track);
+          if (resultFull && resultFull.spotifyUrl) {
+            trackResults.push({
+              originalTitle: track.title || track,
+              position: track.position || '',
+              duration: track.duration || '',
+              found: true,
+              spotifyUrl: resultFull.spotifyUrl,
+              previewUrl: resultFull.previewUrl,
+              spotifyName: resultFull.name
+            });
+          } else {
+            trackResults.push({
+              originalTitle: track.title || track,
+              position: track.position || '',
+              duration: track.duration || '',
+              found: false
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error searching track:', error);
+        trackResults.push({
+          originalTitle: track.title || track,
+          position: track.position || '',
+          duration: track.duration || '',
+          found: false,
+          error: error.message
+        });
+      }
+    }
+
+    res.json({ success: true, tracks: trackResults });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Start server
 console.log('🎵 Starting Vinyl Barcode Scanner...');
 console.log('📦 Using JSON file database (no MongoDB needed!)');
