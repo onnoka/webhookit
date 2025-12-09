@@ -11,11 +11,11 @@
     <div class="detail-top-bar">
         <a href="/vinyls" class="btn-back-minimal">← Back</a>
         <div class="detail-actions">
-            <button onclick="playAlbumOnSpotify('<%= vinyl.artist.replace(/'/g, "\\'") %>', '<%= vinyl.title.replace(/'/g, "\\'") %>')" class="btn-action-minimal">
+            <button onclick="playAlbumOnSpotify()" class="btn-action-minimal">
                 🎵 Play
             </button>
             <button onclick="deleteVinyl('<%= vinyl.id %>')" class="btn-action-minimal btn-danger-minimal">
-                🗑️
+                Delete
             </button>
         </div>
     </div>
@@ -67,6 +67,13 @@
                         day: 'numeric'
                     }) %></span>
                 </div>
+                <div class="meta-item">
+                    <span class="meta-label">Type</span>
+                    <select id="vinylType" class="type-select-detail" onchange="updateVinylType('<%= vinyl.id %>')">
+                        <option value="album" <%= (vinyl.type || 'album') === 'album' ? 'selected' : '' %>>Album</option>
+                        <option value="single" <%= vinyl.type === 'single' ? 'selected' : '' %>>Single</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Spotify Player Container -->
@@ -104,12 +111,19 @@
     <script src="/js/auth.js"></script>
     <script>
         let originalCoverUrl = '<%= vinyl.coverUrl %>';
+        const vinylData = {
+            artist: <%- JSON.stringify(vinyl.artist) %>,
+            title: <%- JSON.stringify(vinyl.title) %>,
+            tracks: <%- JSON.stringify(vinyl.tracks || []) %>
+        };
 
         function isMobile() {
             return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         }
 
-        async function playAlbumOnSpotify(artist, album) {
+        async function playAlbumOnSpotify() {
+            const artist = vinylData.artist;
+            const album = vinylData.title;
             // Check if we have tracks for this vinyl
             const hasTracks = <%= (vinyl.tracks && vinyl.tracks.length > 0) ? 'true' : 'false' %>;
 
@@ -124,7 +138,7 @@
 
         async function playVinylTracks(artist) {
             try {
-                const tracks = <%= JSON.stringify(vinyl.tracks || []) %>;
+                const tracks = vinylData.tracks;
 
                 // Search for each track on Spotify
                 const response = await fetch('/api/spotify/tracks', {
