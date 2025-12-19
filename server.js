@@ -4,11 +4,13 @@ const bodyParser = require('body-parser');
 const https = require('https');
 const fs = require('fs');
 const JsonDB = require('./lib/jsondb');
+const UserManager = require('./lib/userManager');
 
 const app = express();
 const PORT = process.env.PORT || 8124;
 const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN || 'pEbvHbIafRFLJcNkfZQmTBhrhacSEuKZrhFrHcIn';
 const AUTH_PIN = process.env.AUTH_PIN || '2026';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || require('crypto').randomBytes(32).toString('hex');
 
 // Spotify API credentials (using client credentials flow)
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || 'a030c7e726654eac9f62b72856e8380a';
@@ -18,6 +20,9 @@ let spotifyTokenExpiry = null;
 
 // Initialize JSON database
 const db = new JsonDB(path.join(__dirname, 'data', 'vinyls.json'));
+
+// Initialize User Manager
+const userManager = new UserManager(ENCRYPTION_KEY);
 
 // Middleware
 app.use(bodyParser.json());
@@ -373,6 +378,11 @@ app.get('/vinyls/add', (req, res) => {
   res.render('vinyls/add');
 });
 
+// Settings page
+app.get('/settings', (req, res) => {
+  res.render('settings');
+});
+
 // View single vinyl detail
 app.get('/vinyls/:id', (req, res) => {
   try {
@@ -473,6 +483,16 @@ app.get('/api/vinyls/search/:barcode', async (req, res) => {
     } else {
       res.json({ success: false, message: 'Album not found' });
     }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get all vinyls (for statistics)
+app.get('/api/vinyls/all', (req, res) => {
+  try {
+    const vinyls = db.getAllVinyls();
+    res.json({ success: true, vinyls });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -905,6 +925,284 @@ app.post('/api/spotify/tracks', async (req, res) => {
     res.json({ success: true, tracks: trackResults });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================================
+// USER CREDENTIAL MANAGEMENT
+// ============================================================================
+
+// Get current user's credentials (decrypted)
+app.get('/api/user/credentials', requirePIN, async (req, res) => {
+  try {
+    const username = req.query.username || 'default';
+    const credentials = await userManager.getCredentials(username);
+
+    if (!credentials) {
+      return res.json({
+        success: true,
+        credentials: null,
+        hasImported: false
+      });
+    }
+
+    // Don't send back the actual tokens to client, just indicate if they exist
+    res.json({
+      success: true,
+      credentials: {
+        username: credentials.username,
+        hasDiscogs: !!credentials.discogs,
+        hasSpotify: !!credentials.spotify,
+        discogsUsername: credentials.discogs?.username || null,
+        hasImported: credentials.hasImported,
+        lastSync: credentials.lastSync
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Save user credentials (encrypted)
+app.post('/api/user/credentials', requirePIN, async (req, res) => {
+  try {
+    const { username, discogs, spotify, pin } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ success: false, message: 'Username required' });
+    }
+
+    await userManager.setCredentials(username, {
+      discogs,
+      spotify,
+      pin
+    });
+
+    res.json({ success: true, message: 'Credentials saved securely' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update last sync timestamp
+app.post('/api/user/sync-complete', async (req, res) => {
+  try {
+    const { username } = req.body;
+    await userManager.updateLastSync(username || 'default');
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================================
+// DISCOGS IMPORT/SYNC
+// ============================================================================
+
+// Helper: Fetch Discogs collection releases (paginated)
+function getDiscogsCollection(discogsUsername, discogsToken, page = 1) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.discogs.com',
+      path: `/users/${encodeURIComponent(discogsUsername)}/collection/folders/0/releases?page=${page}&per_page=100`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'VinylBarcodeScanner/2.0',
+        'Authorization': `Discogs token=${discogsToken}`
+      }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Helper: Check if vinyl is duplicate
+function isDuplicate(release, existingVinyls) {
+  const barcode = release.basic_information?.barcode?.[0] || '';
+  const artist = release.basic_information?.artists?.[0]?.name || '';
+  const title = release.basic_information?.title || '';
+
+  // Check barcode match
+  if (barcode) {
+    const barcodeMatch = existingVinyls.some(v =>
+      v.barcode && v.barcode === barcode
+    );
+    if (barcodeMatch) return true;
+  }
+
+  // Check artist + title match
+  if (artist && title) {
+    const titleMatch = existingVinyls.some(v =>
+      v.artist.toLowerCase() === artist.toLowerCase() &&
+      v.title.toLowerCase() === title.toLowerCase()
+    );
+    if (titleMatch) return true;
+  }
+
+  return false;
+}
+
+// Import/Update collection from Discogs
+app.post('/api/import/discogs', async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    // Get user credentials
+    const credentials = await userManager.getCredentials(username || 'default');
+    if (!credentials || !credentials.discogs) {
+      return res.status(400).json({
+        success: false,
+        message: 'Discogs credentials not found. Please save them in Settings first.'
+      });
+    }
+
+    const discogsUsername = credentials.discogs.username;
+    const discogsToken = credentials.discogs.token;
+
+    // Set up Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    function sendProgress(data) {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    }
+
+    let totalAdded = 0;
+    let totalDuplicates = 0;
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    const existingVinyls = db.getAllVinyls();
+
+    while (hasMorePages) {
+      try {
+        // Fetch page of releases
+        const collectionData = await getDiscogsCollection(discogsUsername, discogsToken, currentPage);
+
+        if (!collectionData.releases || collectionData.releases.length === 0) {
+          hasMorePages = false;
+          break;
+        }
+
+        // Process each release on this page
+        for (const release of collectionData.releases) {
+          const basicInfo = release.basic_information;
+
+          // Check if duplicate
+          if (isDuplicate(release, existingVinyls)) {
+            totalDuplicates++;
+            continue;
+          }
+
+          // Extract vinyl data
+          const artist = basicInfo.artists?.[0]?.name || 'Unknown';
+          const title = basicInfo.title || 'Unknown';
+          const year = basicInfo.year || 'Unknown';
+          const label = basicInfo.labels?.[0]?.name || 'Unknown';
+          const coverUrl = basicInfo.cover_image || basicInfo.thumb || '/placeholder.jpg';
+          const barcode = basicInfo.barcode?.[0] || `discogs-${release.id}`;
+
+          // Get full release details for tracks
+          let tracks = [];
+          try {
+            const details = await getReleaseDetails(release.id);
+            tracks = details.tracklist || [];
+          } catch (error) {
+            console.error(`Failed to get tracks for release ${release.id}:`, error.message);
+          }
+
+          // Determine type based on formats
+          let type = 'album';
+          if (basicInfo.formats) {
+            const format = basicInfo.formats[0];
+            if (format.descriptions) {
+              const desc = format.descriptions.join(' ').toLowerCase();
+              if (desc.includes('single') || desc.includes('ep') || desc.includes('maxi')) {
+                type = 'single';
+              }
+            }
+          }
+
+          // Add vinyl to database
+          const vinyl = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            barcode,
+            title,
+            artist,
+            year,
+            label,
+            coverUrl,
+            tracks,
+            type,
+            createdAt: new Date().toISOString(),
+            source: 'discogs-import'
+          };
+
+          db.addVinyl(vinyl);
+          existingVinyls.push(vinyl);
+          totalAdded++;
+
+          // Send progress update
+          sendProgress({
+            progress: {
+              current: (currentPage - 1) * 100 + collectionData.releases.indexOf(release) + 1,
+              total: collectionData.pagination?.items || 0,
+              duplicates: totalDuplicates
+            }
+          });
+
+          // Rate limiting: wait 1 second between detailed fetches
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Check if there are more pages
+        if (collectionData.pagination && collectionData.pagination.pages > currentPage) {
+          currentPage++;
+        } else {
+          hasMorePages = false;
+        }
+
+        // Rate limiting between pages
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+      } catch (error) {
+        console.error(`Error fetching page ${currentPage}:`, error.message);
+        sendProgress({ error: `Failed to fetch page ${currentPage}: ${error.message}` });
+        hasMorePages = false;
+      }
+    }
+
+    // Update last sync
+    await userManager.updateLastSync(username || 'default');
+
+    // Send completion
+    sendProgress({
+      complete: true,
+      summary: {
+        added: totalAdded,
+        duplicates: totalDuplicates,
+        total: totalAdded + totalDuplicates
+      }
+    });
+
+    res.end();
+
+  } catch (error) {
+    console.error('Import error:', error);
+    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    res.end();
   }
 });
 
