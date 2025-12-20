@@ -12,6 +12,12 @@ function normalizeString(str) {
     .trim();
 }
 
+// Normalize barcode (remove discogs- prefix if present)
+function normalizeBarcode(barcode) {
+  if (!barcode) return '';
+  return barcode.replace(/^discogs-/i, '').trim();
+}
+
 // Main cleanup function
 function cleanupDuplicates() {
   console.log('🧹 Starting duplicate cleanup...\n');
@@ -23,11 +29,24 @@ function cleanupDuplicates() {
 
   console.log(`📊 Total vinyls before cleanup: ${vinyls.length}`);
 
-  // Group by normalized artist + title
+  // Group by barcode first, then by normalized artist + title
   const groups = {};
 
   vinyls.forEach(vinyl => {
-    const key = normalizeString(vinyl.artist) + '|' + normalizeString(vinyl.title);
+    let key;
+
+    // If vinyl has a barcode, use normalized barcode as key
+    if (vinyl.barcode) {
+      const normalizedBarcode = normalizeBarcode(vinyl.barcode);
+      if (normalizedBarcode) {
+        key = 'barcode:' + normalizedBarcode;
+      }
+    }
+
+    // If no barcode, fall back to artist + title
+    if (!key) {
+      key = 'artist-title:' + normalizeString(vinyl.artist) + '|' + normalizeString(vinyl.title);
+    }
 
     if (!groups[key]) {
       groups[key] = [];
@@ -64,9 +83,9 @@ function cleanupDuplicates() {
 
       console.log(`\n🔍 Found ${vinylsInGroup.length} copies of:`);
       console.log(`   "${oldest.artist} - ${oldest.title}"`);
-      console.log(`   ✅ Keeping: ${oldest.id} (${new Date(oldest.createdAt).toLocaleDateString('nl-NL')})`);
+      console.log(`   ✅ Keeping: ${oldest.id} (${new Date(oldest.createdAt).toLocaleDateString('nl-NL')}) [barcode: ${oldest.barcode || 'none'}]`);
       duplicates.forEach(dup => {
-        console.log(`   ❌ Deleting: ${dup.id} (${new Date(dup.createdAt).toLocaleDateString('nl-NL')})`);
+        console.log(`   ❌ Deleting: ${dup.id} (${new Date(dup.createdAt).toLocaleDateString('nl-NL')}) [barcode: ${dup.barcode || 'none'}]`);
       });
     }
   });
