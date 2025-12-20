@@ -18,7 +18,8 @@ function cleanupDuplicates() {
 
   // Read vinyls
   const data = fs.readFileSync(VINYLS_FILE, 'utf8');
-  const vinyls = JSON.parse(data);
+  const db = JSON.parse(data);
+  const vinyls = db.vinyls || [];
 
   console.log(`📊 Total vinyls before cleanup: ${vinyls.length}`);
 
@@ -80,8 +81,9 @@ function cleanupDuplicates() {
   fs.writeFileSync(backupFile, data);
   console.log(`\n💾 Backup saved: ${backupFile}`);
 
-  // Save cleaned data
-  fs.writeFileSync(VINYLS_FILE, JSON.stringify(toKeep, null, 2));
+  // Save cleaned data with same structure
+  const cleanedDb = { vinyls: toKeep };
+  fs.writeFileSync(VINYLS_FILE, JSON.stringify(cleanedDb, null, 2));
   console.log(`✅ Cleaned data saved!`);
   console.log(`\n🎉 Done! ${toDelete.length} duplicates removed.`);
 }
