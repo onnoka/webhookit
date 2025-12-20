@@ -151,13 +151,102 @@
         const mobileMenu = document.getElementById('mobileMenu');
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const closeMenu = document.getElementById('closeMenu');
-        let currentSort = 'recent';
-        let currentFilter = 'all';
+
+        // Restore state from sessionStorage or use defaults
+        let currentSort = sessionStorage.getItem('vinylSort') || 'recent';
+        let currentFilter = sessionStorage.getItem('vinylFilter') || 'all';
         let currentGridSize = localStorage.getItem('gridSize') || '5';
 
         // Set initial grid size from localStorage
         vinylGrid.style.gridTemplateColumns = `repeat(${currentGridSize}, 1fr)`;
         document.querySelector(`.grid-size-btn[data-size="${currentGridSize}"]`)?.classList.add('active');
+
+        // Restore sort button active state
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.sort === currentSort);
+        });
+        document.querySelectorAll('.sort-btn-mobile').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.sort === currentSort);
+        });
+
+        // Restore filter button active state
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === currentFilter);
+        });
+        document.querySelectorAll('.filter-btn-mobile').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === currentFilter);
+        });
+
+        // Apply saved sort and filter
+        if (currentSort !== 'recent') {
+            sortVinyls(currentSort);
+        }
+        if (currentFilter !== 'all') {
+            applyFiltersAndSearch();
+        }
+
+        // Restore scroll position after a short delay (to ensure DOM is ready)
+        const savedScrollPos = sessionStorage.getItem('vinylScrollPos');
+        if (savedScrollPos) {
+            setTimeout(() => {
+                window.scrollTo(0, parseInt(savedScrollPos));
+                sessionStorage.removeItem('vinylScrollPos');
+            }, 100);
+        }
+
+        // Save state when clicking on a vinyl
+        document.querySelectorAll('.vinyl-cover').forEach(link => {
+            link.addEventListener('click', () => {
+                sessionStorage.setItem('vinylSort', currentSort);
+                sessionStorage.setItem('vinylFilter', currentFilter);
+                sessionStorage.setItem('vinylScrollPos', window.scrollY.toString());
+            });
+        });
+
+        // Filter and search function
+        function applyFiltersAndSearch() {
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            let visibleCount = 0;
+            vinyls.forEach(vinyl => {
+                const artist = vinyl.dataset.artist;
+                const album = vinyl.dataset.album;
+                const type = vinyl.dataset.type || 'album';
+
+                // Check if matches search
+                const matchesSearch = query.length === 0 || query.length >= 2 && (artist.includes(query) || album.includes(query));
+
+                // Check if matches filter
+                const matchesFilter = currentFilter === 'all' || type === currentFilter;
+
+                // Show only if matches both
+                const shouldShow = matchesSearch && matchesFilter;
+                vinyl.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            vinylGrid.style.display = visibleCount === 0 ? 'none' : 'grid';
+        }
+
+        // Sort function
+        function sortVinyls(sortType) {
+            const sorted = [...vinyls].sort((a, b) => {
+                switch(sortType) {
+                    case 'artist':
+                        return a.dataset.artist.localeCompare(b.dataset.artist);
+                    case 'album':
+                        return a.dataset.album.localeCompare(b.dataset.album);
+                    case 'year':
+                        return parseInt(b.dataset.year) - parseInt(a.dataset.year);
+                    case 'recent':
+                    default:
+                        return new Date(b.dataset.created) - new Date(a.dataset.created);
+                }
+            });
+
+            sorted.forEach(vinyl => vinylGrid.appendChild(vinyl));
+        }
 
         // Grid size selector
         document.querySelectorAll('.grid-size-btn').forEach(btn => {
@@ -199,56 +288,11 @@
             });
         }
 
-        // Filter and search function
-        function applyFiltersAndSearch() {
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-            let visibleCount = 0;
-            vinyls.forEach(vinyl => {
-                const artist = vinyl.dataset.artist;
-                const album = vinyl.dataset.album;
-                const type = vinyl.dataset.type || 'album';
-
-                // Check if matches search
-                const matchesSearch = query.length === 0 || query.length >= 2 && (artist.includes(query) || album.includes(query));
-
-                // Check if matches filter
-                const matchesFilter = currentFilter === 'all' || type === currentFilter;
-
-                // Show only if matches both
-                const shouldShow = matchesSearch && matchesFilter;
-                vinyl.style.display = shouldShow ? '' : 'none';
-                if (shouldShow) visibleCount++;
-            });
-
-            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-            vinylGrid.style.display = visibleCount === 0 ? 'none' : 'grid';
-        }
-
         // Search functionality
         if (searchInput) {
             searchInput.addEventListener('input', () => {
                 applyFiltersAndSearch();
             });
-        }
-
-        // Sort function
-        function sortVinyls(sortType) {
-            const sorted = [...vinyls].sort((a, b) => {
-                switch(sortType) {
-                    case 'artist':
-                        return a.dataset.artist.localeCompare(b.dataset.artist);
-                    case 'album':
-                        return a.dataset.album.localeCompare(b.dataset.album);
-                    case 'year':
-                        return parseInt(b.dataset.year) - parseInt(a.dataset.year);
-                    case 'recent':
-                    default:
-                        return new Date(b.dataset.created) - new Date(a.dataset.created);
-                }
-            });
-
-            sorted.forEach(vinyl => vinylGrid.appendChild(vinyl));
         }
 
         // Desktop sort functionality
@@ -259,6 +303,7 @@
 
                 const sortType = btn.dataset.sort;
                 currentSort = sortType;
+                sessionStorage.setItem('vinylSort', sortType);
                 sortVinyls(sortType);
             });
         });
@@ -272,6 +317,7 @@
 
                 const sortType = btn.dataset.sort;
                 currentSort = sortType;
+                sessionStorage.setItem('vinylSort', sortType);
                 sortVinyls(sortType);
 
                 // Close mobile menu
@@ -286,6 +332,7 @@
                 btn.classList.add('active');
 
                 currentFilter = btn.dataset.filter;
+                sessionStorage.setItem('vinylFilter', currentFilter);
                 applyFiltersAndSearch();
             });
         });
@@ -298,6 +345,7 @@
                 btn.classList.add('active');
 
                 currentFilter = btn.dataset.filter;
+                sessionStorage.setItem('vinylFilter', currentFilter);
                 applyFiltersAndSearch();
 
                 // Close mobile menu
